@@ -85,6 +85,24 @@ pub enum SessionPhase {
     Reconnecting,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum NavigationAction {
+    Recents,
+    Back,
+    Home,
+}
+
+impl NavigationAction {
+    pub fn shortcut_virtual_key(self) -> u16 {
+        match self {
+            Self::Recents => b'S' as u16,
+            Self::Back => b'B' as u16,
+            Self::Home => b'H' as u16,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Session {

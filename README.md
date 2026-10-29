@@ -2,15 +2,19 @@
 
 一个用于 Windows 的简洁安卓投屏控制面板。基于官方 [scrcpy](https://github.com/Genymobile/scrcpy)，提供设备选择、USB / Wi-Fi 连接和无线配置。投屏画面使用独立的 scrcpy 窗口，电脑键鼠操作直接由 scrcpy 完成。
 
-[下载最新版](https://github.com/Mai-Mu/qzz-mirror/releases/latest) · [更新日志](CHANGELOG.md)
+[下载 v0.3.1](https://github.com/Mai-Mu/qzz-mirror/releases/tag/v0.3.1) · [更新日志](CHANGELOG.md) · [对比 v0.2.1](https://github.com/Mai-Mu/qzz-mirror/compare/v0.2.1...v0.3.1)
+
+**v0.3.1（2026-10-29）** 为投屏窗口增加简洁的安卓三键栏，并改进按键发送与拖动重绘。内置官方 scrcpy **5.0.1**，原有连接、设置和投屏操作继续保留。
 
 首版面向个人使用，一次投屏一台设备。已确认范围见 [产品决策](docs/decisions.md)，验证项目见 [验收清单](docs/acceptance.md)。
 
 ## 解压使用
 
-1. 将 `Qzz-Mirror-0.2.1-win-x64.zip` 完整解压到可读写目录。
+1. 从 [v0.3.1 发布页](https://github.com/Mai-Mu/qzz-mirror/releases/tag/v0.3.1)下载 `Qzz-Mirror-0.3.1-win-x64.zip`，完整解压到可读写目录。
 2. 保留 `qzz-mirror.exe` 与旁边的 `runtime` 文件夹，双击 `qzz-mirror.exe`。
 3. 连接设备，在面板中选择它，点击“开始投屏”。打开软件本身不会自动投屏。
+
+升级前，先右键旧版托盘图标选择“退出”，再打开新版；仅关闭面板会留在托盘中运行。
 
 运行环境为 Windows 10 / 11 x64，需要 Microsoft Edge WebView2 Runtime。开发工具不属于用户运行依赖；若本机缺少 WebView2，可按 [Tauri 官方 Windows 依赖说明](https://v2.tauri.app/start/prerequisites/#windows)准备。便携包已包含 scrcpy、adb 及其运行文件，无需另配 adb 环境变量。
 
@@ -41,6 +45,16 @@
 ### 已保存的无线设备
 
 点击已保存设备，核对当前 IP 和端口后连接，再点击“开始投屏”。保存地址不会让处于关机、离网或已关闭调试状态的设备自动上线。
+
+### 投屏窗口三键栏
+
+投屏就绪后，窗口底部提供 **最近任务 □、返回 ◁、主页 ○** 三个按键。普通窗口下，按键栏贴在投屏窗口底边外侧，随窗口移动、缩放；窗口最小化或关闭时一起隐藏或结束。
+
+全屏或窗口下方空间不足时，按键栏自动收起。将鼠标移至可见画面底边附近可短暂唤出浮层，移开后自动隐藏。按键栏不改变 scrcpy 的窗口大小、位置、快捷键及原有键鼠操作，主面板也不增加三键控件。
+
+按键仅作用于当前已就绪的投屏设备；停止或恢复连接期间不能向旧会话发送按键，失败信息进入现有连接日志。
+
+0.3.1 改用运行中 scrcpy 的原生快捷键通道，每次点击不再启动 ADB 输入命令；拖动时只移动底栏，缩放时使用双缓冲重绘。按住 Shift、Ctrl、Alt、Windows 键或对应快捷键字母时，请松开后再点击导航。
 
 ### 设置与托盘
 
@@ -116,24 +130,26 @@ npm run package
 
 ```text
 outputs/
-  Qzz-Mirror-0.2.1-win-x64/
-  Qzz-Mirror-0.2.1-win-x64.zip
-  Qzz-Mirror-0.2.1-win-x64.zip.sha256
+  Qzz-Mirror-0.3.1-win-x64/
+  Qzz-Mirror-0.3.1-win-x64.zip
+  Qzz-Mirror-0.3.1-win-x64.zip.sha256
 ```
 
 `package-manifest.json` 保存主程序及运行核心清单的校验值；ZIP 的 SHA-256 单独提供。重复打包会将旧产物移入 `.work` 备份后发布新产物，不递归删除已有目录。构建失败时会保留暂存内容用于排查。
 
 便携包包含更新日志及 `third-party-licenses` 许可文档。下载包的运行核心清单仅保留版本、上游来源和文件校验值，不包含开发机绝对路径；本地准备清单仍保留原始来源便于核对。
 
-若默认输出目录中的程序仍在运行，可使用 `node scripts/package.mjs --output "outputs/releases/v0.2.1"` 输出到另一处项目内目录，保留正在运行的版本。
+若默认输出目录中的程序仍在运行，可使用 `node scripts/package.mjs --output "outputs/development/0.3.1"` 输出到另一处项目内目录，保留正在运行的版本。
 
 后端单元检查与隔离集成测试：
 
 ```powershell
 npm run test:engine
+npm run test:navigation
+npm run test:sdl-navigation
 ```
 
-界面布局与设置交互已在浏览器检查；0.2.1 更新品牌与设置图标。构建、隔离测试及历史真机记录见 [验收清单](docs/acceptance.md)。
+0.3.1 已通过 17 项后端单元测试、23 项隔离集成检查、3 项几何用例和 15 项原生自建窗口检查；实际 SDL 组件中的 36 次导航投递也已通过。这些检查覆盖输入投递、窗口跟随、焦点与会话生命周期；未测量手机端到端响应，实际指针全屏唤出与跨屏 DPI 仍待验证，详见 [验收清单](docs/acceptance.md)。
 
 ## 许可与来源
 

@@ -1,5 +1,7 @@
 mod engine;
 mod models;
+mod navigation_bar;
+mod scrcpy_input;
 
 use engine::Engine;
 use models::{Settings, Snapshot, TransportPreference};
@@ -111,6 +113,27 @@ pub fn run() {
                 .map_err(std::io::Error::other)?;
             let background = engine.clone();
             tauri::async_runtime::spawn(async move { background.spawn_background(); });
+            let navigation_engine = engine.clone();
+            let navigation = navigation_bar::NavigationBar::start(move |token, button, complete| {
+                let engine = navigation_engine.clone();
+                let action = match button {
+                    navigation_bar::NavigationButton::Recents => models::NavigationAction::Recents,
+                    navigation_bar::NavigationButton::Back => models::NavigationAction::Back,
+                    navigation_bar::NavigationButton::Home => models::NavigationAction::Home,
+                };
+                tauri::async_runtime::spawn(async move { complete(engine.navigate(token, action).await); });
+            }).map_err(std::io::Error::other)?;
+            let controller = navigation.controller();
+            let tracking_engine = engine.clone();
+            tauri::async_runtime::spawn(async move {
+                while !controller.is_stopped() {
+                    controller.set_target(tracking_engine.toolbar_session().await.map(|session| navigation_bar::Target {
+                        process_id: session.process_id, token: session.token, running: session.running,
+                    }));
+                    tokio::time::sleep(std::time::Duration::from_millis(80)).await;
+                }
+            });
+            app.manage(navigation);
             app.manage(engine);
             let show = MenuItem::with_id(app, "show", "打开轻镜", true, None::<&str>)?;
             let stop = MenuItem::with_id(app, "stop", "停止投屏", true, None::<&str>)?;

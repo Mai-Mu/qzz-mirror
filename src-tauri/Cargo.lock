@@ -2658,7 +2658,7 @@ dependencies = [
 
 [[package]]
 name = "qzz-mirror"
-version = "0.2.1"
+version = "0.3.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -2666,6 +2666,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-single-instance",
  "tokio",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

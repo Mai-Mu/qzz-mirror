@@ -1,6 +1,6 @@
 # 第三方组件与来源
 
-Qzz Mirror · 轻镜通过独立进程调用官方 scrcpy 与 adb。下表记录 v0.2.1 采用的上游来源及许可位置。运行核心保留原版许可，控制面板依赖的精确版本记录在锁文件中。随包的 `third-party-licenses/` 保存实际许可、版权通知、来源记录与 SHA-256 索引；总览见 `third-party-licenses/SOURCE.md`。
+Qzz Mirror · 轻镜通过独立进程调用官方 scrcpy 与 adb。0.3.1 沿用 v0.2.1 的相同运行核心与依赖版本；三键栏直接使用的 windows-sys 0.61.2 已包含在原许可快照中。下表记录对应的上游来源及许可位置。运行核心保留原版许可，控制面板依赖的精确版本记录在锁文件中。随包的 `third-party-licenses/` 保存实际许可、版权通知、来源记录与 SHA-256 索引；总览见 `third-party-licenses/SOURCE.md`。
 
 ## 随运行核心保留的组件
 
@@ -26,7 +26,7 @@ Windows WebView2 是应用使用的系统运行环境，遵循 Microsoft 提供�
 
 ## 原始源码与构建资料
 
-本版本 GitHub Release 同页提供 `Qzz-Mirror-0.2.1-third-party-sources.zip` 及其 `.sha256` 校验文件，包含 FFmpeg 9.0.2、libusb 1.0.30 的原始完整源码压缩包、对应官方 scrcpy 构建脚本以及本包实测的 FFmpeg 许可/配置记录。原始源码包使用同版 scrcpy 官方脚本记录的 SHA-256 校验；具体来源与对应关系记录在附件内的清单中。控制面板源码则由 Qzz Mirror 仓库提供。
+[v0.2.1 GitHub Release](https://github.com/Mai-Mu/qzz-mirror/releases/tag/v0.2.1) 提供 `Qzz-Mirror-0.2.1-third-party-sources.zip` 及其 `.sha256` 校验文件，包含本版沿用的 FFmpeg 9.0.2、libusb 1.0.30 原始完整源码压缩包、对应官方 scrcpy 构建脚本以及实测的 FFmpeg 许可/配置记录。原始源码包使用同版 scrcpy 官方脚本记录的 SHA-256 校验；具体来源与对应关系记录在附件内的清单中。控制面板源码则由 Qzz Mirror 仓库提供。
 
 这些资料用于保留许可通知和提高源码可获得性，不是全软件、工具链或全部文件级权利归属的完整审计，也不表示已证明可逐字节重建官方二进制；未在此作额外的多年书面提供承诺。具体范围和仍未核实的部分见 `third-party-licenses/SOURCE.md`。
 

@@ -1,6 +1,7 @@
 //! The control panel only launches the bundled executables. It never shells out,
 //! kills a shared ADB server, or takes ownership of another app's scrcpy process.
 use crate::models::*;
+use crate::scrcpy_input::{NativeScrcpyDispatcher, NavigationDispatcher};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -27,6 +28,15 @@ const MAX_LOGS: usize = 100;
 #[derive(Clone)]
 pub struct Engine(Arc<Inner>);
 
+/// Native toolbar tracking data for a child owned by this Engine only.
+/// A token is renewed on every new scrcpy process, including wireless recovery.
+#[derive(Debug, Clone, Copy)]
+pub struct ToolbarSession {
+    pub process_id: u32,
+    pub token: u64,
+    pub running: bool,
+}
+
 struct Inner {
     runtime_dir: PathBuf,
     data_dir: PathBuf,
@@ -35,6 +45,8 @@ struct Inner {
     refresh_gate: Mutex<()>,
     busy: Arc<AtomicBool>,
     active: Mutex<Option<ActiveSession>>,
+    navigation: Mutex<()>,
+    navigation_dispatcher: Arc<dyn NavigationDispatcher>,
     cache: Mutex<HashMap<String, CachedMetadata>>,
     next_token: AtomicU64,
     stop_epoch: AtomicU64,
@@ -107,6 +119,12 @@ struct CachedMetadata {
 
 impl Engine {
     pub fn new(runtime_dir: PathBuf, data_dir: PathBuf) -> Result<Self, String> {
+        Self::new_with_navigation_dispatcher(runtime_dir, data_dir, Arc::new(NativeScrcpyDispatcher))
+    }
+
+    /// The isolated engine harness supplies a recording dispatcher here; the
+    /// application always uses `new` and the native owned-window dispatcher.
+    pub fn new_with_navigation_dispatcher(runtime_dir: PathBuf, data_dir: PathBuf, navigation_dispatcher: Arc<dyn NavigationDispatcher>) -> Result<Self, String> {
         let runtime_dir = runtime_dir.canonicalize().map_err(|error| {
             format!("找不到投屏运行组件目录：{}（{error}）", runtime_dir.display())
         })?;
@@ -154,6 +172,8 @@ impl Engine {
             refresh_gate: Mutex::new(()),
             busy: Arc::new(AtomicBool::new(false)),
             active: Mutex::new(None),
+            navigation: Mutex::new(()),
+            navigation_dispatcher,
             cache: Mutex::new(HashMap::new()),
             next_token: AtomicU64::new(1),
             stop_epoch: AtomicU64::new(0),
@@ -207,6 +227,54 @@ impl Engine {
             busy: self.0.busy.load(Ordering::SeqCst),
             last_error: state.last_error.clone(),
         }
+    }
+
+    /// No ADB calls or metadata refreshes: suitable for a native window tracker.
+    pub async fn toolbar_session(&self) -> Option<ToolbarSession> {
+        if self.0.shutting_down.load(Ordering::SeqCst) { return None; }
+        let active = self.0.active.lock().await;
+        let current = active.as_ref()?;
+        if current.user_stop.load(Ordering::SeqCst)
+            || current.stop_epoch != self.0.stop_epoch.load(Ordering::SeqCst) { return None; }
+        let child = current.child.lock().await;
+        Some(ToolbarSession {
+            process_id: child.id()?,
+            token: current.token,
+            running: current.session.phase == SessionPhase::Running,
+        })
+    }
+
+    pub async fn navigate(&self, token: u64, action: NavigationAction) -> Result<(), String> {
+        // Queue only navigation actions, without blocking device refresh/start/stop.
+        // Each queued click is validated again immediately before its own dispatch.
+        let _navigation = self.0.navigation.lock().await;
+        let result = self.navigate_inner(token, action).await;
+        if let Err(error) = &result {
+            self.log(LogLevel::Warning, format!("导航操作未完成：{error}")).await;
+        }
+        result
+    }
+
+    async fn navigate_inner(&self, token: u64, action: NavigationAction) -> Result<(), String> {
+        // Keep the session gate until all four native messages are submitted.
+        // The dispatcher is synchronous/non-waiting and has no process/ADB path.
+        let active = self.0.active.lock().await;
+        let current = active.as_ref().ok_or_else(|| "当前没有正在投屏的设备。".to_string())?;
+        self.validate_navigation(current, token)?;
+        let mut child = current.child.lock().await;
+        if child.try_wait().map_err(|error| format!("无法确认投屏进程状态：{error}"))?.is_some() {
+            return Err("投屏窗口已结束，请重新开始投屏后再操作。".into());
+        }
+        let process_id = child.id().ok_or_else(|| "投屏进程已结束。".to_string())?;
+        self.validate_navigation(current, token)?;
+        self.0.navigation_dispatcher.dispatch(process_id, action)
+    }
+
+    fn validate_navigation(&self, current: &ActiveSession, token: u64) -> Result<(), String> {
+        validate_navigation_request(token, current.token, current.session.phase,
+            current.user_stop.load(Ordering::SeqCst)
+                || current.stop_epoch != self.0.stop_epoch.load(Ordering::SeqCst)
+                || self.0.shutting_down.load(Ordering::SeqCst))
     }
 
     async fn begin_operation(&self) -> Result<OperationGuard, String> {
@@ -810,6 +878,13 @@ fn parse_persisted(bytes: &[u8]) -> Result<Persisted, String> {
     Ok(value)
 }
 
+fn validate_navigation_request(token: u64, active_token: u64, phase: SessionPhase, stopping: bool) -> Result<(), String> {
+    if token != active_token { return Err("投屏会话已切换，请在当前投屏窗口重新操作。".into()); }
+    if stopping { return Err("投屏正在停止，本次导航已取消。".into()); }
+    if phase != SessionPhase::Running { return Err("投屏尚未就绪或正在重连，请稍候再操作。".into()); }
+    Ok(())
+}
+
 fn build_scrcpy_args(device: &Device, transport: &Transport, settings: &Settings) -> Result<Vec<String>, String> {
     settings.validate()?;
     // Keep the Android display at its original size. An absent max-fps option
@@ -1052,6 +1127,29 @@ mod tests {
         ], &[]).remove(0);
         let transport = device.transports[0].clone();
         (device, transport)
+    }
+
+    #[test]
+    fn navigation_actions_serialize_and_map_to_scrcpy_shortcuts() {
+        for (action, json, key) in [
+            (NavigationAction::Recents, "\"recents\"", b'S' as u16),
+            (NavigationAction::Back, "\"back\"", b'B' as u16),
+            (NavigationAction::Home, "\"home\"", b'H' as u16),
+        ] {
+            assert_eq!(serde_json::to_string(&action).unwrap(), json);
+            assert_eq!(serde_json::from_str::<NavigationAction>(json).unwrap(), action);
+            assert_eq!(action.shortcut_virtual_key(), key);
+        }
+        assert!(serde_json::from_str::<NavigationAction>("\"4;reboot\"").is_err());
+    }
+
+    #[test]
+    fn navigation_only_accepts_the_current_running_session() {
+        assert!(validate_navigation_request(7, 7, SessionPhase::Running, false).is_ok());
+        assert!(validate_navigation_request(6, 7, SessionPhase::Running, false).is_err());
+        assert!(validate_navigation_request(7, 7, SessionPhase::Starting, false).is_err());
+        assert!(validate_navigation_request(7, 7, SessionPhase::Reconnecting, false).is_err());
+        assert!(validate_navigation_request(7, 7, SessionPhase::Running, true).is_err());
     }
 
     #[test]
