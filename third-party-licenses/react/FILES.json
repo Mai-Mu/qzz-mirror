@@ -1,0 +1,32 @@
+{
+  "artifactPathBase": "third-party-licenses/",
+  "files": [
+    {
+      "package": "react",
+      "version": "19.3.1",
+      "declaredLicense": "MIT",
+      "source": "node_modules/react/LICENSE",
+      "file": "react/react-19.3.1/LICENSE",
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "react-dom",
+      "version": "19.3.1",
+      "declaredLicense": "MIT",
+      "source": "node_modules/react-dom/LICENSE",
+      "file": "react/react-dom-19.3.1/LICENSE",
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "scheduler",
+      "version": "0.28.0",
+      "declaredLicense": "MIT",
+      "source": "node_modules/scheduler/LICENSE",
+      "file": "react/scheduler-0.28.0/LICENSE",
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "method": "verbatim-local-package"
+    }
+  ]
+}

@@ -1,0 +1,2483 @@
+{
+  "artifactPathBase": "third-party-licenses/",
+  "files": [
+    {
+      "package": "adler2",
+      "version": "2.0.1",
+      "declaredLicense": "0BSD OR MIT OR Apache-2.0",
+      "source": "cargo-registry/adler2-2.0.1/LICENSE-0BSD",
+      "file": "tauri/adler2-2.0.1/LICENSE-0BSD",
+      "sha256": "861399f8c21c042b110517e76dc6b63a2b334276c8cf17412fc3c8908ca8dc17",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "adler2",
+      "version": "2.0.1",
+      "declaredLicense": "0BSD OR MIT OR Apache-2.0",
+      "source": "cargo-registry/adler2-2.0.1/LICENSE-APACHE",
+      "file": "tauri/adler2-2.0.1/LICENSE-APACHE",
+      "sha256": "8ada45cd9f843acf64e4722ae262c622a2b3b3007c7310ef36ac1061a30f6adb",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "adler2",
+      "version": "2.0.1",
+      "declaredLicense": "0BSD OR MIT OR Apache-2.0",
+      "source": "cargo-registry/adler2-2.0.1/LICENSE-MIT",
+      "file": "tauri/adler2-2.0.1/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "aho-corasick",
+      "version": "1.1.5",
+      "declaredLicense": "Unlicense OR MIT",
+      "source": "cargo-registry/aho-corasick-1.1.5/COPYING",
+      "file": "tauri/aho-corasick-1.1.5/COPYING",
+      "sha256": "01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "aho-corasick",
+      "version": "1.1.5",
+      "declaredLicense": "Unlicense OR MIT",
+      "source": "cargo-registry/aho-corasick-1.1.5/LICENSE-MIT",
+      "file": "tauri/aho-corasick-1.1.5/LICENSE-MIT",
+      "sha256": "0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "alloc-no-stdlib",
+      "version": "3.0.0",
+      "declaredLicense": "BSD-3-Clause",
+      "source": "cargo-registry/alloc-no-stdlib-3.0.0/LICENSE",
+      "file": "tauri/alloc-no-stdlib-3.0.0/LICENSE",
+      "sha256": "c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "alloc-stdlib",
+      "version": "0.3.0",
+      "declaredLicense": "BSD-3-Clause",
+      "source": "https://raw.githubusercontent.com/dropbox/rust-alloc-no-stdlib/0a81fd6928ea3b33c8cd484aa4575d50ffb98012/LICENSE",
+      "file": "tauri/alloc-stdlib-0.3.0/LICENSE",
+      "sha256": "c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae",
+      "method": "upstream-repository-at-crate-vcs-commit",
+      "crateVcsCommit": "0a81fd6928ea3b33c8cd484aa4575d50ffb98012"
+    },
+    {
+      "package": "anyhow",
+      "version": "1.0.104",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/anyhow-1.0.104/LICENSE-APACHE",
+      "file": "tauri/anyhow-1.0.104/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "anyhow",
+      "version": "1.0.104",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/anyhow-1.0.104/LICENSE-MIT",
+      "file": "tauri/anyhow-1.0.104/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "base64",
+      "version": "0.23.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/base64-0.23.1/LICENSE-APACHE",
+      "file": "tauri/base64-0.23.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "base64",
+      "version": "0.23.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/base64-0.23.1/LICENSE-MIT",
+      "file": "tauri/base64-0.23.1/LICENSE-MIT",
+      "sha256": "ab499c75a0f0da8e0fe83bf9ba3a27e5c39705310f07107c6c66b69958d2401c",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "bitflags",
+      "version": "2.13.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/bitflags-2.13.2/LICENSE-APACHE",
+      "file": "tauri/bitflags-2.13.2/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "bitflags",
+      "version": "2.13.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/bitflags-2.13.2/LICENSE-MIT",
+      "file": "tauri/bitflags-2.13.2/LICENSE-MIT",
+      "sha256": "6485b8ed310d3f0340bf1ad1f47645069ce4069dcc6bb46c7d5c6faf41de1fdb",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "brotli",
+      "version": "9.1.0",
+      "declaredLicense": "BSD-3-Clause AND MIT",
+      "source": "cargo-registry/brotli-9.1.0/LICENSE.BSD-3-Clause",
+      "file": "tauri/brotli-9.1.0/LICENSE.BSD-3-Clause",
+      "sha256": "c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "brotli",
+      "version": "9.1.0",
+      "declaredLicense": "BSD-3-Clause AND MIT",
+      "source": "cargo-registry/brotli-9.1.0/LICENSE.MIT",
+      "file": "tauri/brotli-9.1.0/LICENSE.MIT",
+      "sha256": "3d180008e36922a4e8daec11c34c7af264fed5962d07924aea928c38e8663c94",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "brotli-decompressor",
+      "version": "6.2.0",
+      "declaredLicense": "BSD-3-Clause/MIT",
+      "source": "cargo-registry/brotli-decompressor-6.2.0/LICENSE",
+      "file": "tauri/brotli-decompressor-6.2.0/LICENSE",
+      "sha256": "c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "bytemuck",
+      "version": "1.25.2",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "source": "cargo-registry/bytemuck-1.25.2/LICENSE-APACHE",
+      "file": "tauri/bytemuck-1.25.2/LICENSE-APACHE",
+      "sha256": "e3ba223bb1423f0aad8c3dfce0fe3148db48926d41e6fbc3afbbf5ff9e1c89cb",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "bytemuck",
+      "version": "1.25.2",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "source": "cargo-registry/bytemuck-1.25.2/LICENSE-MIT",
+      "file": "tauri/bytemuck-1.25.2/LICENSE-MIT",
+      "sha256": "9df9ba60a11af705f2e451b53762686e615d86f76b169cf075c3237730dbd7e2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "bytemuck",
+      "version": "1.25.2",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "source": "cargo-registry/bytemuck-1.25.2/LICENSE-ZLIB",
+      "file": "tauri/bytemuck-1.25.2/LICENSE-ZLIB",
+      "sha256": "84b34dd7608f7fb9b17bd588a6bf392bf7de504e2716f024a77d89f1b145a151",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "byteorder-lite",
+      "version": "0.1.0",
+      "declaredLicense": "Unlicense OR MIT",
+      "source": "cargo-registry/byteorder-lite-0.1.0/LICENSE-MIT",
+      "file": "tauri/byteorder-lite-0.1.0/LICENSE-MIT",
+      "sha256": "0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "bytes",
+      "version": "1.12.1",
+      "declaredLicense": "MIT",
+      "source": "cargo-registry/bytes-1.12.1/LICENSE",
+      "file": "tauri/bytes-1.12.1/LICENSE",
+      "sha256": "45f522cacecb1023856e46df79ca625dfc550c94910078bd8aec6e02880b3d42",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "cfb",
+      "version": "0.14.0",
+      "declaredLicense": "MIT",
+      "source": "cargo-registry/cfb-0.14.0/LICENSE",
+      "file": "tauri/cfb-0.14.0/LICENSE",
+      "sha256": "ebaac853b53fec0ed475796f533ce676912a4df9ad9d8a621fa76d5060591e10",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "cfg-if",
+      "version": "1.0.5",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/cfg-if-1.0.5/LICENSE-APACHE",
+      "file": "tauri/cfg-if-1.0.5/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "cfg-if",
+      "version": "1.0.5",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/cfg-if-1.0.5/LICENSE-MIT",
+      "file": "tauri/cfg-if-1.0.5/LICENSE-MIT",
+      "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "cookie",
+      "version": "0.18.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/cookie-0.18.2/LICENSE-APACHE",
+      "file": "tauri/cookie-0.18.2/LICENSE-APACHE",
+      "sha256": "2773e20df8f4c52a026b5b578c7f2457341f5aa3fb6612fd87e1d2e1bd8f48ad",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "cookie",
+      "version": "0.18.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/cookie-0.18.2/LICENSE-MIT",
+      "file": "tauri/cookie-0.18.2/LICENSE-MIT",
+      "sha256": "f28420c1906af38be726cd7842798f0194b27c41d6051c0d1e9ee348b8a4a0ea",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "crc32fast",
+      "version": "1.5.3",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/crc32fast-1.5.3/LICENSE-APACHE",
+      "file": "tauri/crc32fast-1.5.3/LICENSE-APACHE",
+      "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "crc32fast",
+      "version": "1.5.3",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/crc32fast-1.5.3/LICENSE-MIT",
+      "file": "tauri/crc32fast-1.5.3/LICENSE-MIT",
+      "sha256": "61d383b05b87d78f94d2937e2580cce47226d17823c0430fbcad09596537efcf",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "crossbeam-channel",
+      "version": "0.5.17",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/crossbeam-channel-0.5.17/LICENSE-APACHE",
+      "file": "tauri/crossbeam-channel-0.5.17/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "crossbeam-channel",
+      "version": "0.5.17",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/crossbeam-channel-0.5.17/LICENSE-MIT",
+      "file": "tauri/crossbeam-channel-0.5.17/LICENSE-MIT",
+      "sha256": "5734ed989dfca1f625b40281ee9f4530f91b2411ec01cb748223e7eb87e201ab",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "crossbeam-channel",
+      "version": "0.5.17",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/crossbeam-channel-0.5.17/LICENSE-THIRD-PARTY",
+      "file": "tauri/crossbeam-channel-0.5.17/LICENSE-THIRD-PARTY",
+      "sha256": "b16db96b93b1d7cf7bea533f572091ec6bca3234fbe0a83038be772ff391a44c",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "crossbeam-utils",
+      "version": "0.8.23",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/crossbeam-utils-0.8.23/LICENSE-APACHE",
+      "file": "tauri/crossbeam-utils-0.8.23/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "crossbeam-utils",
+      "version": "0.8.23",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/crossbeam-utils-0.8.23/LICENSE-MIT",
+      "file": "tauri/crossbeam-utils-0.8.23/LICENSE-MIT",
+      "sha256": "5734ed989dfca1f625b40281ee9f4530f91b2411ec01cb748223e7eb87e201ab",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "ctor",
+      "version": "1.0.13",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/ctor-1.0.13/LICENSE-APACHE",
+      "file": "tauri/ctor-1.0.13/LICENSE-APACHE",
+      "sha256": "a8ad31b1c3f40dca5a84119351b8fa8ddc868edd77fad8a8ebf6d8f2d16fa4ae",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "ctor",
+      "version": "1.0.13",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/ctor-1.0.13/LICENSE-MIT",
+      "file": "tauri/ctor-1.0.13/LICENSE-MIT",
+      "sha256": "bccaa8b6c09f94e81f06696e179dbe058464bbdfbc823b6d49cada1d71e84ac3",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "deranged",
+      "version": "0.5.9",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/deranged-0.5.9/LICENSE-Apache",
+      "file": "tauri/deranged-0.5.9/LICENSE-Apache",
+      "sha256": "edd65bdd88957a205c47d53fa499eed8865a70320f0f03f6391668cb304ea376",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "deranged",
+      "version": "0.5.9",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/deranged-0.5.9/LICENSE-MIT",
+      "file": "tauri/deranged-0.5.9/LICENSE-MIT",
+      "sha256": "231c837c45eb53f108fb48929e488965bc4fcc14e9ea21d35f50e6b99d98685b",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "dirs",
+      "version": "7.0.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/dirs-7.0.0/LICENSE-APACHE",
+      "file": "tauri/dirs-7.0.0/LICENSE-APACHE",
+      "sha256": "d3174ad63e721d4c9dccb8ad4320848992d314369bc46319720b5802c9153fe9",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "dirs",
+      "version": "7.0.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/dirs-7.0.0/LICENSE-MIT",
+      "file": "tauri/dirs-7.0.0/LICENSE-MIT",
+      "sha256": "6a2e0ade09a7d5f816f11566fee2b151b32235a7fad52b41d49cce96f833c1a9",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "dirs-sys",
+      "version": "0.5.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/dirs-sys-0.5.0/LICENSE-APACHE",
+      "file": "tauri/dirs-sys-0.5.0/LICENSE-APACHE",
+      "sha256": "d3174ad63e721d4c9dccb8ad4320848992d314369bc46319720b5802c9153fe9",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "dirs-sys",
+      "version": "0.5.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/dirs-sys-0.5.0/LICENSE-MIT",
+      "file": "tauri/dirs-sys-0.5.0/LICENSE-MIT",
+      "sha256": "6a2e0ade09a7d5f816f11566fee2b151b32235a7fad52b41d49cce96f833c1a9",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "dpi",
+      "version": "0.1.2",
+      "declaredLicense": "Apache-2.0 AND MIT",
+      "source": "cargo-registry/dpi-0.1.2/LICENSE",
+      "file": "tauri/dpi-0.1.2/LICENSE",
+      "sha256": "6dc0e068dcf3a5bc8e054205b85b7720e1d49265bbc64bf515d2cf79197df69a",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "dpi",
+      "version": "0.1.2",
+      "declaredLicense": "Apache-2.0 AND MIT",
+      "source": "cargo-registry/dpi-0.1.2/LICENSE-LIBM-MIT",
+      "file": "tauri/dpi-0.1.2/LICENSE-LIBM-MIT",
+      "sha256": "9eff396a99bafd208e7126602420d6864f6066c08b84485a5b032320a9c01997",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "dunce",
+      "version": "1.0.5",
+      "declaredLicense": "CC0-1.0 OR MIT-0 OR Apache-2.0",
+      "source": "cargo-registry/dunce-1.0.5/LICENSE",
+      "file": "tauri/dunce-1.0.5/LICENSE",
+      "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "equivalent",
+      "version": "1.0.3",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/equivalent-1.0.3/LICENSE-APACHE",
+      "file": "tauri/equivalent-1.0.3/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "equivalent",
+      "version": "1.0.3",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/equivalent-1.0.3/LICENSE-MIT",
+      "file": "tauri/equivalent-1.0.3/LICENSE-MIT",
+      "sha256": "7365cc8878a1d7ce155a58c4ca09c3d7a6be413efa5334a80ea842912b669349",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "erased-serde",
+      "version": "0.4.11",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/erased-serde-0.4.11/LICENSE-APACHE",
+      "file": "tauri/erased-serde-0.4.11/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "erased-serde",
+      "version": "0.4.11",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/erased-serde-0.4.11/LICENSE-MIT",
+      "file": "tauri/erased-serde-0.4.11/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "fdeflate",
+      "version": "0.3.7",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/fdeflate-0.3.7/LICENSE-APACHE",
+      "file": "tauri/fdeflate-0.3.7/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "fdeflate",
+      "version": "0.3.7",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/fdeflate-0.3.7/LICENSE-MIT",
+      "file": "tauri/fdeflate-0.3.7/LICENSE-MIT",
+      "sha256": "c77a4cf9da729987d0fe7ccd811e3bd27393914ddf3d23467c18cc22954513b3",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "flate2",
+      "version": "1.1.10",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/flate2-1.1.10/LICENSE-APACHE",
+      "file": "tauri/flate2-1.1.10/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "flate2",
+      "version": "1.1.10",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/flate2-1.1.10/LICENSE-MIT",
+      "file": "tauri/flate2-1.1.10/LICENSE-MIT",
+      "sha256": "025436edff4cfcdde17a5811fdea78892d8482efd1abdec5a17872d07a4f2112",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "fnv",
+      "version": "1.0.7",
+      "declaredLicense": "Apache-2.0 / MIT",
+      "source": "cargo-registry/fnv-1.0.7/LICENSE-APACHE",
+      "file": "tauri/fnv-1.0.7/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "fnv",
+      "version": "1.0.7",
+      "declaredLicense": "Apache-2.0 / MIT",
+      "source": "cargo-registry/fnv-1.0.7/LICENSE-MIT",
+      "file": "tauri/fnv-1.0.7/LICENSE-MIT",
+      "sha256": "65fdb6c76cd61612070c066eec9ecdb30ee74fb27859d0d9af58b9f499fd0c3e",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "form_urlencoded",
+      "version": "1.2.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/form_urlencoded-1.2.2/LICENSE-APACHE",
+      "file": "tauri/form_urlencoded-1.2.2/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "form_urlencoded",
+      "version": "1.2.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/form_urlencoded-1.2.2/LICENSE-MIT",
+      "file": "tauri/form_urlencoded-1.2.2/LICENSE-MIT",
+      "sha256": "20c7855c364d57ea4c97889a5e8d98470a9952dade37bd9248b9a54431670e5e",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "getrandom",
+      "version": "0.3.4",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/getrandom-0.3.4/LICENSE-APACHE",
+      "file": "tauri/getrandom-0.3.4/LICENSE-APACHE",
+      "sha256": "aaff376532ea30a0cd5330b9502ad4a4c8bf769c539c87ffe78819d188a18ebf",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "getrandom",
+      "version": "0.3.4",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/getrandom-0.3.4/LICENSE-MIT",
+      "file": "tauri/getrandom-0.3.4/LICENSE-MIT",
+      "sha256": "29e9fe5074bd27e0e5d5d110394fbbcd841baee2651a3c4b4560a632702cede4",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "glob",
+      "version": "0.3.4",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/glob-0.3.4/LICENSE-APACHE",
+      "file": "tauri/glob-0.3.4/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "glob",
+      "version": "0.3.4",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/glob-0.3.4/LICENSE-MIT",
+      "file": "tauri/glob-0.3.4/LICENSE-MIT",
+      "sha256": "6485b8ed310d3f0340bf1ad1f47645069ce4069dcc6bb46c7d5c6faf41de1fdb",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "hashbrown",
+      "version": "0.17.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/hashbrown-0.17.1/LICENSE-APACHE",
+      "file": "tauri/hashbrown-0.17.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "hashbrown",
+      "version": "0.17.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/hashbrown-0.17.1/LICENSE-MIT",
+      "file": "tauri/hashbrown-0.17.1/LICENSE-MIT",
+      "sha256": "ff8f68cb076caf8cefe7a6430d4ac086ce6af2ca8ce2c4e5a2004d4552ef52a2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "heck",
+      "version": "0.5.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/heck-0.5.0/LICENSE-APACHE",
+      "file": "tauri/heck-0.5.0/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "heck",
+      "version": "0.5.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/heck-0.5.0/LICENSE-MIT",
+      "file": "tauri/heck-0.5.0/LICENSE-MIT",
+      "sha256": "7b63ecd5f1902af1b63729947373683c32745c16a10e8e6292e2e2dcd7e90ae0",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "http",
+      "version": "1.5.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/http-1.5.0/LICENSE-APACHE",
+      "file": "tauri/http-1.5.0/LICENSE-APACHE",
+      "sha256": "8bb1b50b0e5c9399ae33bd35fab2769010fa6c14e8860c729a52295d84896b7a",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "http",
+      "version": "1.5.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/http-1.5.0/LICENSE-MIT",
+      "file": "tauri/http-1.5.0/LICENSE-MIT",
+      "sha256": "dc91f8200e4b2a1f9261035d4c18c33c246911a6c0f7b543d75347e61b249cff",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "icu_collections",
+      "version": "2.4.0",
+      "declaredLicense": "Unicode-3.0",
+      "source": "cargo-registry/icu_collections-2.4.0/LICENSE",
+      "file": "tauri/icu_collections-2.4.0/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "icu_locale_core",
+      "version": "2.4.0",
+      "declaredLicense": "Unicode-3.0",
+      "source": "cargo-registry/icu_locale_core-2.4.0/LICENSE",
+      "file": "tauri/icu_locale_core-2.4.0/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "icu_normalizer",
+      "version": "2.4.0",
+      "declaredLicense": "Unicode-3.0",
+      "source": "cargo-registry/icu_normalizer-2.4.0/LICENSE",
+      "file": "tauri/icu_normalizer-2.4.0/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "icu_normalizer_data",
+      "version": "2.4.0",
+      "declaredLicense": "Unicode-3.0",
+      "source": "cargo-registry/icu_normalizer_data-2.4.0/LICENSE",
+      "file": "tauri/icu_normalizer_data-2.4.0/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "icu_properties",
+      "version": "2.4.0",
+      "declaredLicense": "Unicode-3.0",
+      "source": "cargo-registry/icu_properties-2.4.0/LICENSE",
+      "file": "tauri/icu_properties-2.4.0/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "icu_properties_data",
+      "version": "2.4.0",
+      "declaredLicense": "Unicode-3.0",
+      "source": "cargo-registry/icu_properties_data-2.4.0/LICENSE",
+      "file": "tauri/icu_properties_data-2.4.0/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "icu_provider",
+      "version": "2.4.0",
+      "declaredLicense": "Unicode-3.0",
+      "source": "cargo-registry/icu_provider-2.4.0/LICENSE",
+      "file": "tauri/icu_provider-2.4.0/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "idna",
+      "version": "1.1.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/idna-1.1.0/LICENSE-APACHE",
+      "file": "tauri/idna-1.1.0/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "idna",
+      "version": "1.1.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/idna-1.1.0/LICENSE-MIT",
+      "file": "tauri/idna-1.1.0/LICENSE-MIT",
+      "sha256": "b38f11f6096706e6de553dabe2a7ed142d59b6fa8c97e290c67496154745cdd5",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "idna_adapter",
+      "version": "1.2.2",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/idna_adapter-1.2.2/LICENSE-APACHE",
+      "file": "tauri/idna_adapter-1.2.2/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "idna_adapter",
+      "version": "1.2.2",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/idna_adapter-1.2.2/LICENSE-MIT",
+      "file": "tauri/idna_adapter-1.2.2/LICENSE-MIT",
+      "sha256": "8b43ce8accd61e9d370b5ca9e9c4f953279b5c239926c62315b40e24df51b726",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "image",
+      "version": "0.25.10",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/image-0.25.10/LICENSE-APACHE",
+      "file": "tauri/image-0.25.10/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "image",
+      "version": "0.25.10",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/image-0.25.10/LICENSE-MIT",
+      "file": "tauri/image-0.25.10/LICENSE-MIT",
+      "sha256": "c77a4cf9da729987d0fe7ccd811e3bd27393914ddf3d23467c18cc22954513b3",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "indexmap",
+      "version": "2.14.2",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/indexmap-2.14.2/LICENSE-APACHE",
+      "file": "tauri/indexmap-2.14.2/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "indexmap",
+      "version": "2.14.2",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/indexmap-2.14.2/LICENSE-MIT",
+      "file": "tauri/indexmap-2.14.2/LICENSE-MIT",
+      "sha256": "ecc269ef87fd38a1d98e30bfac9ba964a9dbd9315c3770fed98d4d7cb5882055",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "infer",
+      "version": "0.22.0",
+      "declaredLicense": "MIT",
+      "source": "cargo-registry/infer-0.22.0/LICENSE",
+      "file": "tauri/infer-0.22.0/LICENSE",
+      "sha256": "270b0d81891aa44c7e8726cf9432dade9556a01c848bacd2f3ef839c9c1a1859",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "itoa",
+      "version": "1.0.18",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/itoa-1.0.18/LICENSE-APACHE",
+      "file": "tauri/itoa-1.0.18/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "itoa",
+      "version": "1.0.18",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/itoa-1.0.18/LICENSE-MIT",
+      "file": "tauri/itoa-1.0.18/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "json-patch",
+      "version": "4.2.0",
+      "declaredLicense": "MIT/Apache-2.0",
+      "source": "cargo-registry/json-patch-4.2.0/LICENSE-APACHE",
+      "file": "tauri/json-patch-4.2.0/LICENSE-APACHE",
+      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "json-patch",
+      "version": "4.2.0",
+      "declaredLicense": "MIT/Apache-2.0",
+      "source": "cargo-registry/json-patch-4.2.0/LICENSE-MIT",
+      "file": "tauri/json-patch-4.2.0/LICENSE-MIT",
+      "sha256": "87f7527b1066337751f7f4d717089bf514ff8f7ee7d66c4c5b891b09e744ec11",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "jsonptr",
+      "version": "0.7.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/jsonptr-0.7.1/LICENSE-APACHE",
+      "file": "tauri/jsonptr-0.7.1/LICENSE-APACHE",
+      "sha256": "2cf31f2ae7f3feba667d50fc1d4d21ecf217703c04c3068b83c9a73b6dde723a",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "jsonptr",
+      "version": "0.7.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/jsonptr-0.7.1/LICENSE-MIT",
+      "file": "tauri/jsonptr-0.7.1/LICENSE-MIT",
+      "sha256": "2bc107bdc18a74263d20bdefdb8073e17bc1a01b6b374dc5835683a33ee5ba7d",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "keyboard-types",
+      "version": "0.8.3",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/keyboard-types-0.8.3/LICENSE-APACHE",
+      "file": "tauri/keyboard-types-0.8.3/LICENSE-APACHE",
+      "sha256": "769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "keyboard-types",
+      "version": "0.8.3",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/keyboard-types-0.8.3/LICENSE-MIT",
+      "file": "tauri/keyboard-types-0.8.3/LICENSE-MIT",
+      "sha256": "31dbbab009f1b2e59a1622d5955dfafc38ebe834000215b49d954c6f85fe927c",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "libc",
+      "version": "0.2.191",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/libc-0.2.191/LICENSE-APACHE",
+      "file": "tauri/libc-0.2.191/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "libc",
+      "version": "0.2.191",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/libc-0.2.191/LICENSE-MIT",
+      "file": "tauri/libc-0.2.191/LICENSE-MIT",
+      "sha256": "123a331b5dbf04c30097fa43b8f858bc85df671fe776de498d01f3d6b7c1f69e",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "litemap",
+      "version": "0.8.3",
+      "declaredLicense": "Unicode-3.0",
+      "source": "cargo-registry/litemap-0.8.3/LICENSE",
+      "file": "tauri/litemap-0.8.3/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "lock_api",
+      "version": "0.4.14",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/lock_api-0.4.14/LICENSE-APACHE",
+      "file": "tauri/lock_api-0.4.14/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "lock_api",
+      "version": "0.4.14",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/lock_api-0.4.14/LICENSE-MIT",
+      "file": "tauri/lock_api-0.4.14/LICENSE-MIT",
+      "sha256": "c9a75f18b9ab2927829a208fc6aa2cf4e63b8420887ba29cdb265d6619ae82d5",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "log",
+      "version": "0.4.34",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/log-0.4.34/LICENSE-APACHE",
+      "file": "tauri/log-0.4.34/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "log",
+      "version": "0.4.34",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/log-0.4.34/LICENSE-MIT",
+      "file": "tauri/log-0.4.34/LICENSE-MIT",
+      "sha256": "6485b8ed310d3f0340bf1ad1f47645069ce4069dcc6bb46c7d5c6faf41de1fdb",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "memchr",
+      "version": "2.8.3",
+      "declaredLicense": "Unlicense OR MIT",
+      "source": "cargo-registry/memchr-2.8.3/COPYING",
+      "file": "tauri/memchr-2.8.3/COPYING",
+      "sha256": "01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "memchr",
+      "version": "2.8.3",
+      "declaredLicense": "Unlicense OR MIT",
+      "source": "cargo-registry/memchr-2.8.3/LICENSE-MIT",
+      "file": "tauri/memchr-2.8.3/LICENSE-MIT",
+      "sha256": "0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "mime",
+      "version": "0.3.17",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/mime-0.3.17/LICENSE-APACHE",
+      "file": "tauri/mime-0.3.17/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "mime",
+      "version": "0.3.17",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/mime-0.3.17/LICENSE-MIT",
+      "file": "tauri/mime-0.3.17/LICENSE-MIT",
+      "sha256": "df9cfd06d8a44d9a671eadd39ffd97f166481da015a30f45dfd27886209c5922",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "miniz_oxide",
+      "version": "0.8.9",
+      "declaredLicense": "MIT OR Zlib OR Apache-2.0",
+      "source": "cargo-registry/miniz_oxide-0.8.9/LICENSE",
+      "file": "tauri/miniz_oxide-0.8.9/LICENSE",
+      "sha256": "4108245a1f2df9d4e94df8abed5b4ba0759bb2f9b40a6b939f1be141077ae50b",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "miniz_oxide",
+      "version": "0.8.9",
+      "declaredLicense": "MIT OR Zlib OR Apache-2.0",
+      "source": "cargo-registry/miniz_oxide-0.8.9/LICENSE-APACHE.md",
+      "file": "tauri/miniz_oxide-0.8.9/LICENSE-APACHE.md",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "miniz_oxide",
+      "version": "0.8.9",
+      "declaredLicense": "MIT OR Zlib OR Apache-2.0",
+      "source": "cargo-registry/miniz_oxide-0.8.9/LICENSE-MIT.md",
+      "file": "tauri/miniz_oxide-0.8.9/LICENSE-MIT.md",
+      "sha256": "799e9ca9d179295ef372f25d3769cdda7d25bb2668add6a6a1e22d1e4c678b8d",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "miniz_oxide",
+      "version": "0.8.9",
+      "declaredLicense": "MIT OR Zlib OR Apache-2.0",
+      "source": "cargo-registry/miniz_oxide-0.8.9/LICENSE-ZLIB.md",
+      "file": "tauri/miniz_oxide-0.8.9/LICENSE-ZLIB.md",
+      "sha256": "0a54e647fe54104658b5e563c04c6f9edf251710e47bce692e0bd990a4ddaa39",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "miniz_oxide",
+      "version": "0.9.1",
+      "declaredLicense": "MIT OR Zlib OR Apache-2.0",
+      "source": "cargo-registry/miniz_oxide-0.9.1/LICENSE",
+      "file": "tauri/miniz_oxide-0.9.1/LICENSE",
+      "sha256": "4108245a1f2df9d4e94df8abed5b4ba0759bb2f9b40a6b939f1be141077ae50b",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "miniz_oxide",
+      "version": "0.9.1",
+      "declaredLicense": "MIT OR Zlib OR Apache-2.0",
+      "source": "cargo-registry/miniz_oxide-0.9.1/LICENSE-APACHE.md",
+      "file": "tauri/miniz_oxide-0.9.1/LICENSE-APACHE.md",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "miniz_oxide",
+      "version": "0.9.1",
+      "declaredLicense": "MIT OR Zlib OR Apache-2.0",
+      "source": "cargo-registry/miniz_oxide-0.9.1/LICENSE-MIT.md",
+      "file": "tauri/miniz_oxide-0.9.1/LICENSE-MIT.md",
+      "sha256": "799e9ca9d179295ef372f25d3769cdda7d25bb2668add6a6a1e22d1e4c678b8d",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "miniz_oxide",
+      "version": "0.9.1",
+      "declaredLicense": "MIT OR Zlib OR Apache-2.0",
+      "source": "cargo-registry/miniz_oxide-0.9.1/LICENSE-ZLIB.md",
+      "file": "tauri/miniz_oxide-0.9.1/LICENSE-ZLIB.md",
+      "sha256": "0a54e647fe54104658b5e563c04c6f9edf251710e47bce692e0bd990a4ddaa39",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "mio",
+      "version": "1.2.4",
+      "declaredLicense": "MIT",
+      "source": "cargo-registry/mio-1.2.4/LICENSE",
+      "file": "tauri/mio-1.2.4/LICENSE",
+      "sha256": "07919255c7e04793d8ea760d6c2ce32d19f9ff02bdbdde3ce90b1e1880929a9b",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "moxcms",
+      "version": "0.8.1",
+      "declaredLicense": "BSD-3-Clause OR Apache-2.0",
+      "source": "cargo-registry/moxcms-0.8.1/LICENSE-APACHE.md",
+      "file": "tauri/moxcms-0.8.1/LICENSE-APACHE.md",
+      "sha256": "90bf2d659c43045111b65c733ab2a6d4cbcb422a098368c8c58a9ba3db4ed0c5",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "moxcms",
+      "version": "0.8.1",
+      "declaredLicense": "BSD-3-Clause OR Apache-2.0",
+      "source": "cargo-registry/moxcms-0.8.1/LICENSE.md",
+      "file": "tauri/moxcms-0.8.1/LICENSE.md",
+      "sha256": "2aa92cada6431e75615e3fe6cb1a9082c98f777d48ae1c087c0da0e37f7b8bff",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "muda",
+      "version": "0.20.0",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/muda-0.20.0/LICENSE-APACHE",
+      "file": "tauri/muda-0.20.0/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "muda",
+      "version": "0.20.0",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/muda-0.20.0/LICENSE-MIT",
+      "file": "tauri/muda-0.20.0/LICENSE-MIT",
+      "sha256": "2ab5537b8c0cb1d475e2145b6a7994b04e7c71e6e5bd836f7f9c47c221a5ad9a",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "muda",
+      "version": "0.20.0",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/muda-0.20.0/LICENSE.spdx",
+      "file": "tauri/muda-0.20.0/LICENSE.spdx",
+      "sha256": "b99f9d43803f2ac979c50949df630bd8eeaf2fcd1b9fdb9093710d70f5dfb63d",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "num-conv",
+      "version": "0.2.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/num-conv-0.2.2/LICENSE-Apache",
+      "file": "tauri/num-conv-0.2.2/LICENSE-Apache",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "num-conv",
+      "version": "0.2.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/num-conv-0.2.2/LICENSE-MIT",
+      "file": "tauri/num-conv-0.2.2/LICENSE-MIT",
+      "sha256": "e2e245f2b566d0bfafb0f6a04c16b82d710c4e6e7d799e39bb4ef6e541b85b98",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "num-traits",
+      "version": "0.2.19",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/num-traits-0.2.19/LICENSE-APACHE",
+      "file": "tauri/num-traits-0.2.19/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "num-traits",
+      "version": "0.2.19",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/num-traits-0.2.19/LICENSE-MIT",
+      "file": "tauri/num-traits-0.2.19/LICENSE-MIT",
+      "sha256": "6485b8ed310d3f0340bf1ad1f47645069ce4069dcc6bb46c7d5c6faf41de1fdb",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "once_cell",
+      "version": "1.21.4",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/once_cell-1.21.4/LICENSE-APACHE",
+      "file": "tauri/once_cell-1.21.4/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "once_cell",
+      "version": "1.21.4",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/once_cell-1.21.4/LICENSE-MIT",
+      "file": "tauri/once_cell-1.21.4/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "option-ext",
+      "version": "0.2.0",
+      "declaredLicense": "MPL-2.0",
+      "source": "cargo-registry/option-ext-0.2.0/LICENSE.txt",
+      "file": "tauri/option-ext-0.2.0/LICENSE.txt",
+      "sha256": "66a3107d5ad6a058aab753eaac2047ccb2ed0e39465dd0fe5844da3e300d5172",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "parking_lot",
+      "version": "0.12.5",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/parking_lot-0.12.5/LICENSE-APACHE",
+      "file": "tauri/parking_lot-0.12.5/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "parking_lot",
+      "version": "0.12.5",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/parking_lot-0.12.5/LICENSE-MIT",
+      "file": "tauri/parking_lot-0.12.5/LICENSE-MIT",
+      "sha256": "c9a75f18b9ab2927829a208fc6aa2cf4e63b8420887ba29cdb265d6619ae82d5",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "parking_lot_core",
+      "version": "0.9.12",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/parking_lot_core-0.9.12/LICENSE-APACHE",
+      "file": "tauri/parking_lot_core-0.9.12/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "parking_lot_core",
+      "version": "0.9.12",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/parking_lot_core-0.9.12/LICENSE-MIT",
+      "file": "tauri/parking_lot_core-0.9.12/LICENSE-MIT",
+      "sha256": "c9a75f18b9ab2927829a208fc6aa2cf4e63b8420887ba29cdb265d6619ae82d5",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "percent-encoding",
+      "version": "2.3.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/percent-encoding-2.3.2/LICENSE-APACHE",
+      "file": "tauri/percent-encoding-2.3.2/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "percent-encoding",
+      "version": "2.3.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/percent-encoding-2.3.2/LICENSE-MIT",
+      "file": "tauri/percent-encoding-2.3.2/LICENSE-MIT",
+      "sha256": "b38f11f6096706e6de553dabe2a7ed142d59b6fa8c97e290c67496154745cdd5",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "phf",
+      "version": "0.13.1",
+      "declaredLicense": "MIT",
+      "source": "cargo-registry/phf-0.13.1/LICENSE",
+      "file": "tauri/phf-0.13.1/LICENSE",
+      "sha256": "0ab4d106b6faac07fb6a051815fd1b4d862d730895e2d7d7358c2f13565e7a38",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "phf_shared",
+      "version": "0.13.1",
+      "declaredLicense": "MIT",
+      "source": "cargo-registry/phf_shared-0.13.1/LICENSE",
+      "file": "tauri/phf_shared-0.13.1/LICENSE",
+      "sha256": "0ab4d106b6faac07fb6a051815fd1b4d862d730895e2d7d7358c2f13565e7a38",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "pin-project-lite",
+      "version": "0.2.17",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/pin-project-lite-0.2.17/LICENSE-APACHE",
+      "file": "tauri/pin-project-lite-0.2.17/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "pin-project-lite",
+      "version": "0.2.17",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/pin-project-lite-0.2.17/LICENSE-MIT",
+      "file": "tauri/pin-project-lite-0.2.17/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "plist",
+      "version": "1.10.3",
+      "declaredLicense": "MIT",
+      "source": "cargo-registry/plist-1.10.3/LICENCE",
+      "file": "tauri/plist-1.10.3/LICENCE",
+      "sha256": "5b0ae40d1a35f7ae6591a28e44771240e6a88cb03a66c9189a45b9681639b466",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "png",
+      "version": "0.18.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/png-0.18.1/LICENSE-APACHE",
+      "file": "tauri/png-0.18.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "png",
+      "version": "0.18.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/png-0.18.1/LICENSE-MIT",
+      "file": "tauri/png-0.18.1/LICENSE-MIT",
+      "sha256": "eaf40297c75da471f7cda1f3458e8d91b4b2ec866e609527a13acfa93b638652",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "potential_utf",
+      "version": "0.1.6",
+      "declaredLicense": "Unicode-3.0",
+      "source": "cargo-registry/potential_utf-0.1.6/LICENSE",
+      "file": "tauri/potential_utf-0.1.6/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "powerfmt",
+      "version": "0.2.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/powerfmt-0.2.1/LICENSE-Apache",
+      "file": "tauri/powerfmt-0.2.1/LICENSE-Apache",
+      "sha256": "155420c6403d4e0fca34105e3c03fdd6939b64c393c7ec6f95f5b72c5474eab0",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "powerfmt",
+      "version": "0.2.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/powerfmt-0.2.1/LICENSE-MIT",
+      "file": "tauri/powerfmt-0.2.1/LICENSE-MIT",
+      "sha256": "070dbc7dda03a29296f2d58bdb9b7331af90f2abc9f31df22875d1eabaf29852",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "pxfm",
+      "version": "0.1.30",
+      "declaredLicense": "BSD-3-Clause OR Apache-2.0",
+      "source": "cargo-registry/pxfm-0.1.30/LICENSE-APACHE.md",
+      "file": "tauri/pxfm-0.1.30/LICENSE-APACHE.md",
+      "sha256": "90bf2d659c43045111b65c733ab2a6d4cbcb422a098368c8c58a9ba3db4ed0c5",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "pxfm",
+      "version": "0.1.30",
+      "declaredLicense": "BSD-3-Clause OR Apache-2.0",
+      "source": "cargo-registry/pxfm-0.1.30/LICENSE.md",
+      "file": "tauri/pxfm-0.1.30/LICENSE.md",
+      "sha256": "2aa92cada6431e75615e3fe6cb1a9082c98f777d48ae1c087c0da0e37f7b8bff",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "quick-xml",
+      "version": "0.42.0",
+      "declaredLicense": "MIT",
+      "source": "cargo-registry/quick-xml-0.42.0/LICENSE-MIT.md",
+      "file": "tauri/quick-xml-0.42.0/LICENSE-MIT.md",
+      "sha256": "f0cf9b1c62bbe3bd3a69f5f79c7158f513f612b4940a0a812d1db39d605318bc",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "raw-window-handle",
+      "version": "0.6.2",
+      "declaredLicense": "MIT OR Apache-2.0 OR Zlib",
+      "source": "cargo-registry/raw-window-handle-0.6.2/LICENSE-APACHE.md",
+      "file": "tauri/raw-window-handle-0.6.2/LICENSE-APACHE.md",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "raw-window-handle",
+      "version": "0.6.2",
+      "declaredLicense": "MIT OR Apache-2.0 OR Zlib",
+      "source": "cargo-registry/raw-window-handle-0.6.2/LICENSE-MIT.md",
+      "file": "tauri/raw-window-handle-0.6.2/LICENSE-MIT.md",
+      "sha256": "9c5a80639a57c1c945570e7ebbca0706305849ce3c098021325cca9db2f7acc4",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "raw-window-handle",
+      "version": "0.6.2",
+      "declaredLicense": "MIT OR Apache-2.0 OR Zlib",
+      "source": "cargo-registry/raw-window-handle-0.6.2/LICENSE-ZLIB.md",
+      "file": "tauri/raw-window-handle-0.6.2/LICENSE-ZLIB.md",
+      "sha256": "ae895c8576e682f310fb70d93d9f99b1dd82872094c54a8f6cdfe2ca5c2d6ecb",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "regex",
+      "version": "1.13.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/regex-1.13.1/LICENSE-APACHE",
+      "file": "tauri/regex-1.13.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "regex",
+      "version": "1.13.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/regex-1.13.1/LICENSE-MIT",
+      "file": "tauri/regex-1.13.1/LICENSE-MIT",
+      "sha256": "6485b8ed310d3f0340bf1ad1f47645069ce4069dcc6bb46c7d5c6faf41de1fdb",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "regex-automata",
+      "version": "0.4.18",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/regex-automata-0.4.18/LICENSE-APACHE",
+      "file": "tauri/regex-automata-0.4.18/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "regex-automata",
+      "version": "0.4.18",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/regex-automata-0.4.18/LICENSE-MIT",
+      "file": "tauri/regex-automata-0.4.18/LICENSE-MIT",
+      "sha256": "6485b8ed310d3f0340bf1ad1f47645069ce4069dcc6bb46c7d5c6faf41de1fdb",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "regex-syntax",
+      "version": "0.8.11",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/regex-syntax-0.8.11/LICENSE-APACHE",
+      "file": "tauri/regex-syntax-0.8.11/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "regex-syntax",
+      "version": "0.8.11",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/regex-syntax-0.8.11/LICENSE-MIT",
+      "file": "tauri/regex-syntax-0.8.11/LICENSE-MIT",
+      "sha256": "6485b8ed310d3f0340bf1ad1f47645069ce4069dcc6bb46c7d5c6faf41de1fdb",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "same-file",
+      "version": "1.0.6",
+      "declaredLicense": "Unlicense/MIT",
+      "source": "cargo-registry/same-file-1.0.6/COPYING",
+      "file": "tauri/same-file-1.0.6/COPYING",
+      "sha256": "01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "same-file",
+      "version": "1.0.6",
+      "declaredLicense": "Unlicense/MIT",
+      "source": "cargo-registry/same-file-1.0.6/LICENSE-MIT",
+      "file": "tauri/same-file-1.0.6/LICENSE-MIT",
+      "sha256": "cb3c929a05e6cbc9de9ab06a4c57eeb60ca8c724bef6c138c87d3a577e27aa14",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "scopeguard",
+      "version": "1.2.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/scopeguard-1.2.0/LICENSE-APACHE",
+      "file": "tauri/scopeguard-1.2.0/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "scopeguard",
+      "version": "1.2.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/scopeguard-1.2.0/LICENSE-MIT",
+      "file": "tauri/scopeguard-1.2.0/LICENSE-MIT",
+      "sha256": "fb77f0a9c53e473abe5103c8632ef9f0f2874d4fb3f17cb2d8c661aab9cee9d7",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "semver",
+      "version": "1.0.28",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/semver-1.0.28/LICENSE-APACHE",
+      "file": "tauri/semver-1.0.28/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "semver",
+      "version": "1.0.28",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/semver-1.0.28/LICENSE-MIT",
+      "file": "tauri/semver-1.0.28/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "serde",
+      "version": "1.0.229",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/serde-1.0.229/LICENSE-APACHE",
+      "file": "tauri/serde-1.0.229/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "serde",
+      "version": "1.0.229",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/serde-1.0.229/LICENSE-MIT",
+      "file": "tauri/serde-1.0.229/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "serde-untagged",
+      "version": "0.1.9",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/serde-untagged-0.1.9/LICENSE-APACHE",
+      "file": "tauri/serde-untagged-0.1.9/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "serde-untagged",
+      "version": "0.1.9",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/serde-untagged-0.1.9/LICENSE-MIT",
+      "file": "tauri/serde-untagged-0.1.9/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "serde_core",
+      "version": "1.0.229",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/serde_core-1.0.229/LICENSE-APACHE",
+      "file": "tauri/serde_core-1.0.229/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "serde_core",
+      "version": "1.0.229",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/serde_core-1.0.229/LICENSE-MIT",
+      "file": "tauri/serde_core-1.0.229/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "serde_json",
+      "version": "1.0.154",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/serde_json-1.0.154/LICENSE-APACHE",
+      "file": "tauri/serde_json-1.0.154/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "serde_json",
+      "version": "1.0.154",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/serde_json-1.0.154/LICENSE-MIT",
+      "file": "tauri/serde_json-1.0.154/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "serde_spanned",
+      "version": "1.1.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/serde_spanned-1.1.2/LICENSE-APACHE",
+      "file": "tauri/serde_spanned-1.1.2/LICENSE-APACHE",
+      "sha256": "249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "serde_spanned",
+      "version": "1.1.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/serde_spanned-1.1.2/LICENSE-MIT",
+      "file": "tauri/serde_spanned-1.1.2/LICENSE-MIT",
+      "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "serde_with",
+      "version": "3.24.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/serde_with-3.24.0/LICENSE-APACHE",
+      "file": "tauri/serde_with-3.24.0/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "serde_with",
+      "version": "3.24.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/serde_with-3.24.0/LICENSE-MIT",
+      "file": "tauri/serde_with-3.24.0/LICENSE-MIT",
+      "sha256": "7576269ea71f767b99297934c0b2367532690f8c4badc695edf8e04ab6a1e545",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "serialize-to-javascript",
+      "version": "0.1.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/serialize-to-javascript-0.1.2/LICENSE-APACHE",
+      "file": "tauri/serialize-to-javascript-0.1.2/LICENSE-APACHE",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "serialize-to-javascript",
+      "version": "0.1.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/serialize-to-javascript-0.1.2/LICENSE-MIT",
+      "file": "tauri/serialize-to-javascript-0.1.2/LICENSE-MIT",
+      "sha256": "e53a7165e8bc3ced5e5628404b3d2d28ecc14ad720f1c09ba28385d5151ecf93",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "simd-adler32",
+      "version": "0.3.10",
+      "declaredLicense": "MIT",
+      "source": "cargo-registry/simd-adler32-0.3.10/LICENSE.md",
+      "file": "tauri/simd-adler32-0.3.10/LICENSE.md",
+      "sha256": "42a35170233e83e18856792e748de4c1ce4a63b2afce9a370c89ef3fe23f9f2d",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "siphasher",
+      "version": "1.0.4",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/siphasher-1.0.4/COPYING",
+      "file": "tauri/siphasher-1.0.4/COPYING",
+      "sha256": "c962ee4d1d05ddc138b202b2540219ebc57893fcf97b364852094a9a94ce1365",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "siphasher",
+      "version": "1.0.4",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/siphasher-1.0.4/LICENSE-APACHE",
+      "file": "tauri/siphasher-1.0.4/LICENSE-APACHE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "siphasher",
+      "version": "1.0.4",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/siphasher-1.0.4/LICENSE-MIT",
+      "file": "tauri/siphasher-1.0.4/LICENSE-MIT",
+      "sha256": "f9c4c77baa3828004ee54b8a4f2db2e88ed44a6237a493965bf551fac0fcb62d",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "smallvec",
+      "version": "1.16.4",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/smallvec-1.16.4/LICENSE-APACHE",
+      "file": "tauri/smallvec-1.16.4/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "smallvec",
+      "version": "1.16.4",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/smallvec-1.16.4/LICENSE-MIT",
+      "file": "tauri/smallvec-1.16.4/LICENSE-MIT",
+      "sha256": "0b28172679e0009b655da42797c03fd163a3379d5cfa67ba1f1655e974a2a1a9",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "socket2",
+      "version": "0.6.5",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/socket2-0.6.5/LICENSE-APACHE",
+      "file": "tauri/socket2-0.6.5/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "socket2",
+      "version": "0.6.5",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/socket2-0.6.5/LICENSE-MIT",
+      "file": "tauri/socket2-0.6.5/LICENSE-MIT",
+      "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "softbuffer",
+      "version": "0.4.8",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/softbuffer-0.4.8/LICENSE-APACHE",
+      "file": "tauri/softbuffer-0.4.8/LICENSE-APACHE",
+      "sha256": "a4445427440043e8ce6fadf7a43fb906cb0d7f6c573a560a9f142cf9f9bf8ff4",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "softbuffer",
+      "version": "0.4.8",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/softbuffer-0.4.8/LICENSE-MIT",
+      "file": "tauri/softbuffer-0.4.8/LICENSE-MIT",
+      "sha256": "0463bfa47d6d763d8c824333efb0e6d6df3946c13c3b077c78ed9f23ca50d0f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "stable_deref_trait",
+      "version": "1.2.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/stable_deref_trait-1.2.1/LICENSE-APACHE",
+      "file": "tauri/stable_deref_trait-1.2.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "stable_deref_trait",
+      "version": "1.2.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/stable_deref_trait-1.2.1/LICENSE-MIT",
+      "file": "tauri/stable_deref_trait-1.2.1/LICENSE-MIT",
+      "sha256": "5e05b024f653a5ce199e77cbbbd42fb5553562ec714b819421ed0c3e552a75d7",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tao",
+      "version": "0.37.2",
+      "declaredLicense": "Apache-2.0",
+      "source": "cargo-registry/tao-0.37.2/LICENSE",
+      "file": "tauri/tao-0.37.2/LICENSE",
+      "sha256": "6dc0e068dcf3a5bc8e054205b85b7720e1d49265bbc64bf515d2cf79197df69a",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tao",
+      "version": "0.37.2",
+      "declaredLicense": "Apache-2.0",
+      "source": "cargo-registry/tao-0.37.2/LICENSE.spdx",
+      "file": "tauri/tao-0.37.2/LICENSE.spdx",
+      "sha256": "02b6448337b757772d90e5f31caaa0f9e6afaad2221c01771d0a3deaa4d4196c",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tauri",
+      "version": "2.12.5",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/tauri-2.12.5/LICENSE-APACHE-2.0",
+      "file": "tauri/tauri-2.12.5/LICENSE-APACHE-2.0",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tauri",
+      "version": "2.12.5",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/tauri-2.12.5/LICENSE-MIT",
+      "file": "tauri/tauri-2.12.5/LICENSE-MIT",
+      "sha256": "9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "@tauri-apps/api",
+      "version": "2.12.4",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "node_modules/@tauri-apps/api/LICENSE-APACHE-2.0",
+      "file": "tauri/tauri-js-api-2.12.4/LICENSE-APACHE-2.0",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "@tauri-apps/api",
+      "version": "2.12.4",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "node_modules/@tauri-apps/api/LICENSE-MIT",
+      "file": "tauri/tauri-js-api-2.12.4/LICENSE-MIT",
+      "sha256": "9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "@tauri-apps/api",
+      "version": "2.12.4",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "node_modules/@tauri-apps/api/LICENSE.spdx",
+      "file": "tauri/tauri-js-api-2.12.4/LICENSE.spdx",
+      "sha256": "5e834fe9788c524210deda859c46a550ffa5aa0cba9ea0572f0d81120e97c008",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tauri-plugin-single-instance",
+      "version": "2.5.4",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/tauri-plugin-single-instance-2.5.4/LICENSE.spdx",
+      "file": "tauri/tauri-plugin-single-instance-2.5.4/LICENSE.spdx",
+      "sha256": "eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tauri-plugin-single-instance",
+      "version": "2.5.4",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/tauri-plugin-single-instance-2.5.4/LICENSE_APACHE-2.0",
+      "file": "tauri/tauri-plugin-single-instance-2.5.4/LICENSE_APACHE-2.0",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tauri-plugin-single-instance",
+      "version": "2.5.4",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/tauri-plugin-single-instance-2.5.4/LICENSE_MIT",
+      "file": "tauri/tauri-plugin-single-instance-2.5.4/LICENSE_MIT",
+      "sha256": "b7f455413bfe5f9d7da501a4468d4c5f866a432c325947e98cc9535e8b26cd6d",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tauri-runtime",
+      "version": "2.12.2",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/tauri-runtime-2.12.2/LICENSE-APACHE-2.0",
+      "file": "tauri/tauri-runtime-2.12.2/LICENSE-APACHE-2.0",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tauri-runtime",
+      "version": "2.12.2",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/tauri-runtime-2.12.2/LICENSE-MIT",
+      "file": "tauri/tauri-runtime-2.12.2/LICENSE-MIT",
+      "sha256": "9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tauri-runtime-wry",
+      "version": "2.12.3",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/tauri-runtime-wry-2.12.3/LICENSE-APACHE-2.0",
+      "file": "tauri/tauri-runtime-wry-2.12.3/LICENSE-APACHE-2.0",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tauri-runtime-wry",
+      "version": "2.12.3",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/tauri-runtime-wry-2.12.3/LICENSE-MIT",
+      "file": "tauri/tauri-runtime-wry-2.12.3/LICENSE-MIT",
+      "sha256": "9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tauri-utils",
+      "version": "2.10.2",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/tauri-utils-2.10.2/LICENSE-APACHE-2.0",
+      "file": "tauri/tauri-utils-2.10.2/LICENSE-APACHE-2.0",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tauri-utils",
+      "version": "2.10.2",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/tauri-utils-2.10.2/LICENSE-MIT",
+      "file": "tauri/tauri-utils-2.10.2/LICENSE-MIT",
+      "sha256": "9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "thiserror",
+      "version": "2.0.21",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/thiserror-2.0.21/LICENSE-APACHE",
+      "file": "tauri/thiserror-2.0.21/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "thiserror",
+      "version": "2.0.21",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/thiserror-2.0.21/LICENSE-MIT",
+      "file": "tauri/thiserror-2.0.21/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "time",
+      "version": "0.3.55",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/time-0.3.55/LICENSE-Apache",
+      "file": "tauri/time-0.3.55/LICENSE-Apache",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "time",
+      "version": "0.3.55",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/time-0.3.55/LICENSE-MIT",
+      "file": "tauri/time-0.3.55/LICENSE-MIT",
+      "sha256": "2537228d9a1b44a5dc595241349cae7090b326c8de165aaf89bfddef4a00d0fc",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "time-core",
+      "version": "0.1.9",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/time-core-0.1.9/LICENSE-Apache",
+      "file": "tauri/time-core-0.1.9/LICENSE-Apache",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "time-core",
+      "version": "0.1.9",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/time-core-0.1.9/LICENSE-MIT",
+      "file": "tauri/time-core-0.1.9/LICENSE-MIT",
+      "sha256": "2537228d9a1b44a5dc595241349cae7090b326c8de165aaf89bfddef4a00d0fc",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tinystr",
+      "version": "0.8.5",
+      "declaredLicense": "Unicode-3.0",
+      "source": "cargo-registry/tinystr-0.8.5/LICENSE",
+      "file": "tauri/tinystr-0.8.5/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tokio",
+      "version": "1.54.1",
+      "declaredLicense": "MIT",
+      "source": "cargo-registry/tokio-1.54.1/LICENSE",
+      "file": "tauri/tokio-1.54.1/LICENSE",
+      "sha256": "253cd04c6714889df2d32f3f64d669179a1c95c76ac43c40882c52eb06bc3552",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "toml",
+      "version": "1.1.8+spec-1.1.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/toml-1.1.8+spec-1.1.0/LICENSE-APACHE",
+      "file": "tauri/toml-1.1.8+spec-1.1.0/LICENSE-APACHE",
+      "sha256": "249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "toml",
+      "version": "1.1.8+spec-1.1.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/toml-1.1.8+spec-1.1.0/LICENSE-MIT",
+      "file": "tauri/toml-1.1.8+spec-1.1.0/LICENSE-MIT",
+      "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "toml_datetime",
+      "version": "1.1.2+spec-1.1.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/toml_datetime-1.1.2+spec-1.1.0/LICENSE-APACHE",
+      "file": "tauri/toml_datetime-1.1.2+spec-1.1.0/LICENSE-APACHE",
+      "sha256": "249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "toml_datetime",
+      "version": "1.1.2+spec-1.1.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/toml_datetime-1.1.2+spec-1.1.0/LICENSE-MIT",
+      "file": "tauri/toml_datetime-1.1.2+spec-1.1.0/LICENSE-MIT",
+      "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "toml_parser",
+      "version": "1.1.5+spec-1.1.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/toml_parser-1.1.5+spec-1.1.0/LICENSE-APACHE",
+      "file": "tauri/toml_parser-1.1.5+spec-1.1.0/LICENSE-APACHE",
+      "sha256": "249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "toml_parser",
+      "version": "1.1.5+spec-1.1.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/toml_parser-1.1.5+spec-1.1.0/LICENSE-MIT",
+      "file": "tauri/toml_parser-1.1.5+spec-1.1.0/LICENSE-MIT",
+      "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "toml_writer",
+      "version": "1.1.3+spec-1.1.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/toml_writer-1.1.3+spec-1.1.0/LICENSE-APACHE",
+      "file": "tauri/toml_writer-1.1.3+spec-1.1.0/LICENSE-APACHE",
+      "sha256": "249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "toml_writer",
+      "version": "1.1.3+spec-1.1.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/toml_writer-1.1.3+spec-1.1.0/LICENSE-MIT",
+      "file": "tauri/toml_writer-1.1.3+spec-1.1.0/LICENSE-MIT",
+      "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tracing",
+      "version": "0.1.44",
+      "declaredLicense": "MIT",
+      "source": "cargo-registry/tracing-0.1.44/LICENSE",
+      "file": "tauri/tracing-0.1.44/LICENSE",
+      "sha256": "898b1ae9821e98daf8964c8d6c7f61641f5f5aa78ad500020771c0939ee0dea1",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tracing-core",
+      "version": "0.1.36",
+      "declaredLicense": "MIT",
+      "source": "cargo-registry/tracing-core-0.1.36/LICENSE",
+      "file": "tauri/tracing-core-0.1.36/LICENSE",
+      "sha256": "898b1ae9821e98daf8964c8d6c7f61641f5f5aa78ad500020771c0939ee0dea1",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tray-icon",
+      "version": "0.25.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/tray-icon-0.25.1/LICENSE-APACHE",
+      "file": "tauri/tray-icon-0.25.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tray-icon",
+      "version": "0.25.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/tray-icon-0.25.1/LICENSE-MIT",
+      "file": "tauri/tray-icon-0.25.1/LICENSE-MIT",
+      "sha256": "2ab5537b8c0cb1d475e2145b6a7994b04e7c71e6e5bd836f7f9c47c221a5ad9a",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "tray-icon",
+      "version": "0.25.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/tray-icon-0.25.1/LICENSE.spdx",
+      "file": "tauri/tray-icon-0.25.1/LICENSE.spdx",
+      "sha256": "6c1e5d0ccf5e8951401cb964036ae664d52fc8d1148173b53bc54fc534f5d404",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "typeid",
+      "version": "1.0.3",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/typeid-1.0.3/LICENSE-APACHE",
+      "file": "tauri/typeid-1.0.3/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "typeid",
+      "version": "1.0.3",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/typeid-1.0.3/LICENSE-MIT",
+      "file": "tauri/typeid-1.0.3/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "unicode-segmentation",
+      "version": "1.13.3",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/unicode-segmentation-1.13.3/COPYRIGHT",
+      "file": "tauri/unicode-segmentation-1.13.3/COPYRIGHT",
+      "sha256": "23860c2a7b5d96b21569afedf033469bab9fe14a1b24a35068b8641c578ce24d",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "unicode-segmentation",
+      "version": "1.13.3",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/unicode-segmentation-1.13.3/LICENSE-APACHE",
+      "file": "tauri/unicode-segmentation-1.13.3/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "unicode-segmentation",
+      "version": "1.13.3",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/unicode-segmentation-1.13.3/LICENSE-MIT",
+      "file": "tauri/unicode-segmentation-1.13.3/LICENSE-MIT",
+      "sha256": "7b63ecd5f1902af1b63729947373683c32745c16a10e8e6292e2e2dcd7e90ae0",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "url",
+      "version": "2.5.8",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/url-2.5.8/LICENSE-APACHE",
+      "file": "tauri/url-2.5.8/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "url",
+      "version": "2.5.8",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/url-2.5.8/LICENSE-MIT",
+      "file": "tauri/url-2.5.8/LICENSE-MIT",
+      "sha256": "b38f11f6096706e6de553dabe2a7ed142d59b6fa8c97e290c67496154745cdd5",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "urlpattern",
+      "version": "0.6.0",
+      "declaredLicense": "MIT",
+      "source": "cargo-registry/urlpattern-0.6.0/LICENSE",
+      "file": "tauri/urlpattern-0.6.0/LICENSE",
+      "sha256": "5cf1c9dc617e4cad7fa03181ff893601ad5243aa3be527ef39034e1cd6377676",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "utf8_iter",
+      "version": "1.0.4",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/utf8_iter-1.0.4/COPYRIGHT",
+      "file": "tauri/utf8_iter-1.0.4/COPYRIGHT",
+      "sha256": "c30152c94a6d75e021adbc52b3a52470366a46edb917e17deae3259251af244c",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "utf8_iter",
+      "version": "1.0.4",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/utf8_iter-1.0.4/LICENSE-APACHE",
+      "file": "tauri/utf8_iter-1.0.4/LICENSE-APACHE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "utf8_iter",
+      "version": "1.0.4",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/utf8_iter-1.0.4/LICENSE-MIT",
+      "file": "tauri/utf8_iter-1.0.4/LICENSE-MIT",
+      "sha256": "3fa4ca83dcc9237839b1bdeb2e6d16bdfb5ec0c5ce42b24694d8bbf0dcbef72c",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "uuid",
+      "version": "1.29.0",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/uuid-1.29.0/LICENSE-APACHE",
+      "file": "tauri/uuid-1.29.0/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "uuid",
+      "version": "1.29.0",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/uuid-1.29.0/LICENSE-MIT",
+      "file": "tauri/uuid-1.29.0/LICENSE-MIT",
+      "sha256": "436bc5a105d8e57dcd8778730f3754f7bf39c14d2f530e4cde4bd2d17a83ec3d",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "walkdir",
+      "version": "2.5.0",
+      "declaredLicense": "Unlicense/MIT",
+      "source": "cargo-registry/walkdir-2.5.0/COPYING",
+      "file": "tauri/walkdir-2.5.0/COPYING",
+      "sha256": "01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "walkdir",
+      "version": "2.5.0",
+      "declaredLicense": "Unlicense/MIT",
+      "source": "cargo-registry/walkdir-2.5.0/LICENSE-MIT",
+      "file": "tauri/walkdir-2.5.0/LICENSE-MIT",
+      "sha256": "0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "web-time",
+      "version": "1.1.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/web-time-1.1.0/LICENSE-APACHE",
+      "file": "tauri/web-time-1.1.0/LICENSE-APACHE",
+      "sha256": "54a744942eb3fa63a74d8d359989ed6962c04f3f10ff20cfa08ff8aa7efbe4e6",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "web-time",
+      "version": "1.1.0",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/web-time-1.1.0/LICENSE-MIT",
+      "file": "tauri/web-time-1.1.0/LICENSE-MIT",
+      "sha256": "f428305bbf2e70fbd807af0f3c7ac1b7acfb95311640f451e9d2e48db6d7e96b",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "webview2-com",
+      "version": "0.39.1",
+      "declaredLicense": "MIT",
+      "source": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/LICENSE",
+      "file": "tauri/webview2-com-0.39.1/LICENSE",
+      "sha256": "0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73",
+      "method": "upstream-repository-at-crate-vcs-commit",
+      "crateVcsCommit": "edc2caf886175ccaebe86078c9cfe1ae2a187328"
+    },
+    {
+      "package": "webview2-com-sys",
+      "version": "0.39.1",
+      "declaredLicense": "MIT",
+      "source": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/LICENSE",
+      "file": "tauri/webview2-com-sys-0.39.1/LICENSE",
+      "sha256": "0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73",
+      "method": "upstream-repository-at-crate-vcs-commit",
+      "crateVcsCommit": "edc2caf886175ccaebe86078c9cfe1ae2a187328"
+    },
+    {
+      "package": "winapi-util",
+      "version": "0.1.11",
+      "declaredLicense": "Unlicense OR MIT",
+      "source": "cargo-registry/winapi-util-0.1.11/COPYING",
+      "file": "tauri/winapi-util-0.1.11/COPYING",
+      "sha256": "01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "winapi-util",
+      "version": "0.1.11",
+      "declaredLicense": "Unlicense OR MIT",
+      "source": "cargo-registry/winapi-util-0.1.11/LICENSE-MIT",
+      "file": "tauri/winapi-util-0.1.11/LICENSE-MIT",
+      "sha256": "cb3c929a05e6cbc9de9ab06a4c57eeb60ca8c724bef6c138c87d3a577e27aa14",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "window-vibrancy",
+      "version": "0.8.1",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/window-vibrancy-0.8.1/LICENSE-APACHE",
+      "file": "tauri/window-vibrancy-0.8.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "window-vibrancy",
+      "version": "0.8.1",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/window-vibrancy-0.8.1/LICENSE-MIT",
+      "file": "tauri/window-vibrancy-0.8.1/LICENSE-MIT",
+      "sha256": "617b85f62a4f1b6a62d3d9f28f6d7003b7f68a70b7675a8174bbcc68401ac62d",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "window-vibrancy",
+      "version": "0.8.1",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/window-vibrancy-0.8.1/LICENSE.spdx",
+      "file": "tauri/window-vibrancy-0.8.1/LICENSE.spdx",
+      "sha256": "7ccef0d35e8507fa02d7e904a5277d62723f9ec576d52f6a865cab7b4dbf12ad",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows",
+      "version": "0.62.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-0.62.2/license-apache-2.0",
+      "file": "tauri/windows-0.62.2/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows",
+      "version": "0.62.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-0.62.2/license-mit",
+      "file": "tauri/windows-0.62.2/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-collections",
+      "version": "0.3.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-collections-0.3.2/license-apache-2.0",
+      "file": "tauri/windows-collections-0.3.2/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-collections",
+      "version": "0.3.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-collections-0.3.2/license-mit",
+      "file": "tauri/windows-collections-0.3.2/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-core",
+      "version": "0.62.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-core-0.62.2/license-apache-2.0",
+      "file": "tauri/windows-core-0.62.2/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-core",
+      "version": "0.62.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-core-0.62.2/license-mit",
+      "file": "tauri/windows-core-0.62.2/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-future",
+      "version": "0.3.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-future-0.3.2/license-apache-2.0",
+      "file": "tauri/windows-future-0.3.2/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-future",
+      "version": "0.3.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-future-0.3.2/license-mit",
+      "file": "tauri/windows-future-0.3.2/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-link",
+      "version": "0.2.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-link-0.2.1/license-apache-2.0",
+      "file": "tauri/windows-link-0.2.1/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-link",
+      "version": "0.2.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-link-0.2.1/license-mit",
+      "file": "tauri/windows-link-0.2.1/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-numerics",
+      "version": "0.3.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-numerics-0.3.1/license-apache-2.0",
+      "file": "tauri/windows-numerics-0.3.1/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-numerics",
+      "version": "0.3.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-numerics-0.3.1/license-mit",
+      "file": "tauri/windows-numerics-0.3.1/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-result",
+      "version": "0.4.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-result-0.4.1/license-apache-2.0",
+      "file": "tauri/windows-result-0.4.1/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-result",
+      "version": "0.4.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-result-0.4.1/license-mit",
+      "file": "tauri/windows-result-0.4.1/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-strings",
+      "version": "0.5.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-strings-0.5.1/license-apache-2.0",
+      "file": "tauri/windows-strings-0.5.1/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-strings",
+      "version": "0.5.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-strings-0.5.1/license-mit",
+      "file": "tauri/windows-strings-0.5.1/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-sys",
+      "version": "0.61.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-sys-0.61.2/license-apache-2.0",
+      "file": "tauri/windows-sys-0.61.2/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-sys",
+      "version": "0.61.2",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-sys-0.61.2/license-mit",
+      "file": "tauri/windows-sys-0.61.2/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-threading",
+      "version": "0.2.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-threading-0.2.1/license-apache-2.0",
+      "file": "tauri/windows-threading-0.2.1/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-threading",
+      "version": "0.2.1",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-threading-0.2.1/license-mit",
+      "file": "tauri/windows-threading-0.2.1/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-version",
+      "version": "0.1.7",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-version-0.1.7/license-apache-2.0",
+      "file": "tauri/windows-version-0.1.7/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "windows-version",
+      "version": "0.1.7",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "source": "cargo-registry/windows-version-0.1.7/license-mit",
+      "file": "tauri/windows-version-0.1.7/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "winnow",
+      "version": "1.0.4",
+      "declaredLicense": "MIT",
+      "source": "cargo-registry/winnow-1.0.4/LICENSE-MIT",
+      "file": "tauri/winnow-1.0.4/LICENSE-MIT",
+      "sha256": "cb5aedb296c5246d1f22e9099f925a65146f9f0d6b4eebba97fd27a6cdbbab2d",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "writeable",
+      "version": "0.6.4",
+      "declaredLicense": "Unicode-3.0",
+      "source": "cargo-registry/writeable-0.6.4/LICENSE",
+      "file": "tauri/writeable-0.6.4/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "wry",
+      "version": "0.57.1",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/wry-0.57.1/LICENSE-APACHE",
+      "file": "tauri/wry-0.57.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "wry",
+      "version": "0.57.1",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/wry-0.57.1/LICENSE-MIT",
+      "file": "tauri/wry-0.57.1/LICENSE-MIT",
+      "sha256": "ef88893533af22ffbb68ceef0724ba1389518df26165a34f3c99ad30b884df4f",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "wry",
+      "version": "0.57.1",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "source": "cargo-registry/wry-0.57.1/LICENSE.spdx",
+      "file": "tauri/wry-0.57.1/LICENSE.spdx",
+      "sha256": "26235c41e314fb0da35b33b2bb5bcbc4dd523839f8eeca52efcd43586f441fb5",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "yoke",
+      "version": "0.8.4",
+      "declaredLicense": "Unicode-3.0",
+      "source": "cargo-registry/yoke-0.8.4/LICENSE",
+      "file": "tauri/yoke-0.8.4/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "zerofrom",
+      "version": "0.1.8",
+      "declaredLicense": "Unicode-3.0",
+      "source": "cargo-registry/zerofrom-0.1.8/LICENSE",
+      "file": "tauri/zerofrom-0.1.8/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "zerotrie",
+      "version": "0.2.5",
+      "declaredLicense": "Unicode-3.0",
+      "source": "cargo-registry/zerotrie-0.2.5/LICENSE",
+      "file": "tauri/zerotrie-0.2.5/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "zerovec",
+      "version": "0.11.9",
+      "declaredLicense": "Unicode-3.0",
+      "source": "cargo-registry/zerovec-0.11.9/LICENSE",
+      "file": "tauri/zerovec-0.11.9/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "method": "verbatim-local-package"
+    },
+    {
+      "package": "zmij",
+      "version": "1.0.23",
+      "declaredLicense": "MIT",
+      "source": "cargo-registry/zmij-1.0.23/LICENSE-MIT",
+      "file": "tauri/zmij-1.0.23/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "method": "verbatim-local-package"
+    }
+  ]
+}

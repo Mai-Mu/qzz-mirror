@@ -1,0 +1,34 @@
+{
+  "method": "Read-only calls to exported license/configuration/version functions of bundled FFmpeg DLLs; no media playback or device operation.",
+  "scrcpyVersion": "5.0.1",
+  "upstreamBuildScript": "https://github.com/Genymobile/scrcpy/blob/v5.0.1/app/deps/ffmpeg.sh",
+  "upstreamFFmpegVersion": "9.0.2",
+  "upstreamSourceArchive": "https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz",
+  "upstreamExpectedSourceArchiveSha256": "8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e",
+  "dlls": {
+    "avcodec-63.dll": {
+      "sha256": "159928e3bbe7beaca046ccf831fdf44f1e5559c0e63417f007889a6bb2c5de88",
+      "license": "LGPL version 2.1 or later",
+      "configuration": "--prefix=/home/runner/work/scrcpy/scrcpy/app/deps/work/install/win64-cross-shared --pkg-config-flags=--static --extra-cflags='-O2 -fPIC' --disable-programs --disable-doc --disable-swscale --disable-avfilter --disable-network --disable-everything --disable-vulkan --disable-vdpau --enable-swresample --enable-libdav1d --enable-decoder=h264 --enable-decoder=hevc --enable-decoder=av1 --enable-decoder=vp8 --enable-decoder=vp9 --enable-decoder=libdav1d --enable-decoder=pcm_s16le --enable-decoder=opus --enable-decoder=aac --enable-decoder=flac --enable-decoder=png --enable-protocol=file --enable-demuxer=image2 --enable-parser=png --enable-zlib --enable-muxer=matroska --enable-muxer=mp4 --enable-muxer=opus --enable-muxer=flac --enable-muxer=wav --disable-avdevice --disable-vaapi --enable-d3d11va --enable-hwaccel=h264_d3d11va --enable-hwaccel=h264_d3d11va2 --enable-hwaccel=hevc_d3d11va --enable-hwaccel=hevc_d3d11va2 --enable-hwaccel=av1_d3d11va --enable-hwaccel=av1_d3d11va2 --enable-hwaccel=vp9_d3d11va --enable-hwaccel=vp9_d3d11va2 --disable-static --enable-shared --enable-cross-compile --cross-prefix=x86_64-w64-mingw32- --cc=x86_64-w64-mingw32-gcc --target-os=mingw32 --arch=x86_64",
+      "version": "63.1.102"
+    },
+    "avformat-63.dll": {
+      "sha256": "4dbb0c1c8262f7ae45e7edc4866e26f53b358bf4fc7a0b971f15d1f2d7baf22f",
+      "license": "LGPL version 2.1 or later",
+      "configuration": "--prefix=/home/runner/work/scrcpy/scrcpy/app/deps/work/install/win64-cross-shared --pkg-config-flags=--static --extra-cflags='-O2 -fPIC' --disable-programs --disable-doc --disable-swscale --disable-avfilter --disable-network --disable-everything --disable-vulkan --disable-vdpau --enable-swresample --enable-libdav1d --enable-decoder=h264 --enable-decoder=hevc --enable-decoder=av1 --enable-decoder=vp8 --enable-decoder=vp9 --enable-decoder=libdav1d --enable-decoder=pcm_s16le --enable-decoder=opus --enable-decoder=aac --enable-decoder=flac --enable-decoder=png --enable-protocol=file --enable-demuxer=image2 --enable-parser=png --enable-zlib --enable-muxer=matroska --enable-muxer=mp4 --enable-muxer=opus --enable-muxer=flac --enable-muxer=wav --disable-avdevice --disable-vaapi --enable-d3d11va --enable-hwaccel=h264_d3d11va --enable-hwaccel=h264_d3d11va2 --enable-hwaccel=hevc_d3d11va --enable-hwaccel=hevc_d3d11va2 --enable-hwaccel=av1_d3d11va --enable-hwaccel=av1_d3d11va2 --enable-hwaccel=vp9_d3d11va --enable-hwaccel=vp9_d3d11va2 --disable-static --enable-shared --enable-cross-compile --cross-prefix=x86_64-w64-mingw32- --cc=x86_64-w64-mingw32-gcc --target-os=mingw32 --arch=x86_64",
+      "version": "63.1.102"
+    },
+    "avutil-61.dll": {
+      "sha256": "52eb504ced0ea6d9e936d348df51c8aaeec1cae8fa4a7dba339fea87d7cce725",
+      "license": "LGPL version 2.1 or later",
+      "configuration": "--prefix=/home/runner/work/scrcpy/scrcpy/app/deps/work/install/win64-cross-shared --pkg-config-flags=--static --extra-cflags='-O2 -fPIC' --disable-programs --disable-doc --disable-swscale --disable-avfilter --disable-network --disable-everything --disable-vulkan --disable-vdpau --enable-swresample --enable-libdav1d --enable-decoder=h264 --enable-decoder=hevc --enable-decoder=av1 --enable-decoder=vp8 --enable-decoder=vp9 --enable-decoder=libdav1d --enable-decoder=pcm_s16le --enable-decoder=opus --enable-decoder=aac --enable-decoder=flac --enable-decoder=png --enable-protocol=file --enable-demuxer=image2 --enable-parser=png --enable-zlib --enable-muxer=matroska --enable-muxer=mp4 --enable-muxer=opus --enable-muxer=flac --enable-muxer=wav --disable-avdevice --disable-vaapi --enable-d3d11va --enable-hwaccel=h264_d3d11va --enable-hwaccel=h264_d3d11va2 --enable-hwaccel=hevc_d3d11va --enable-hwaccel=hevc_d3d11va2 --enable-hwaccel=av1_d3d11va --enable-hwaccel=av1_d3d11va2 --enable-hwaccel=vp9_d3d11va --enable-hwaccel=vp9_d3d11va2 --disable-static --enable-shared --enable-cross-compile --cross-prefix=x86_64-w64-mingw32- --cc=x86_64-w64-mingw32-gcc --target-os=mingw32 --arch=x86_64",
+      "version": "61.1.102"
+    },
+    "swresample-7.dll": {
+      "sha256": "7b57e891bf09c43422d79f98cf9d1830c4b1d48a251423ce5fb8c2048eb8fc1e",
+      "license": "LGPL version 2.1 or later",
+      "configuration": "--prefix=/home/runner/work/scrcpy/scrcpy/app/deps/work/install/win64-cross-shared --pkg-config-flags=--static --extra-cflags='-O2 -fPIC' --disable-programs --disable-doc --disable-swscale --disable-avfilter --disable-network --disable-everything --disable-vulkan --disable-vdpau --enable-swresample --enable-libdav1d --enable-decoder=h264 --enable-decoder=hevc --enable-decoder=av1 --enable-decoder=vp8 --enable-decoder=vp9 --enable-decoder=libdav1d --enable-decoder=pcm_s16le --enable-decoder=opus --enable-decoder=aac --enable-decoder=flac --enable-decoder=png --enable-protocol=file --enable-demuxer=image2 --enable-parser=png --enable-zlib --enable-muxer=matroska --enable-muxer=mp4 --enable-muxer=opus --enable-muxer=flac --enable-muxer=wav --disable-avdevice --disable-vaapi --enable-d3d11va --enable-hwaccel=h264_d3d11va --enable-hwaccel=h264_d3d11va2 --enable-hwaccel=hevc_d3d11va --enable-hwaccel=hevc_d3d11va2 --enable-hwaccel=av1_d3d11va --enable-hwaccel=av1_d3d11va2 --enable-hwaccel=vp9_d3d11va --enable-hwaccel=vp9_d3d11va2 --disable-static --enable-shared --enable-cross-compile --cross-prefix=x86_64-w64-mingw32- --cc=x86_64-w64-mingw32-gcc --target-os=mingw32 --arch=x86_64",
+      "version": "7.1.102"
+    }
+  }
+}

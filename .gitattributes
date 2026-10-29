@@ -1,0 +1,6 @@
+* text=auto eol=lf
+
+# Preserve upstream license bytes so their recorded SHA-256 values stay valid.
+third-party-licenses/** -text
+*.png binary
+*.ico binary
