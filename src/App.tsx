@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { getVersion } from '@tauri-apps/api/app';
+import packageMetadata from '../package.json';
 import { api, isTauri } from './api';
 import type { Device, Settings, Snapshot } from './types';
 import SettingsPage from './SettingsPage';
@@ -34,7 +36,7 @@ function MirrorMark({ small = false }: { small?: boolean }) {
 
 const emptySnapshot: Snapshot = {
   devices: [], savedDevices: [], session: null, logs: [], engineVersion: 'scrcpy', busy: false, lastError: null,
-  settings: { maxFps: null, audio: true, alwaysOnTop: false, preferredTransport: 'auto', lastDeviceId: null },
+  settings: { wifiEnabled: true, maxFps: null, audio: true, alwaysOnTop: false, preferredTransport: 'auto', lastDeviceId: null },
 };
 const demoDevice: Device = { id: 'demo-it400i', name: 'IT-400i', model: 'IT-400i', androidVersion: '9', apiLevel: 28, transports: [{ serial: 'DEMO-USB-001', kind: 'usb', state: 'device' }, { serial: '192.0.2.10:5555', kind: 'wifi', state: 'device' }], wifiAddress: '192.0.2.10:5555', audioSupported: false };
 const demoSnapshot: Snapshot = { ...emptySnapshot, devices: [demoDevice], savedDevices: [{ id: demoDevice.id, name: demoDevice.name, address: '192.0.2.10:5555' }], engineVersion: 'scrcpy 5.0.1', settings: { ...emptySnapshot.settings, lastDeviceId: demoDevice.id, audio: false }, logs: [{ time: Date.now(), level: 'info', message: '界面演示模式。这里的设备仅用于预览，不代表真实连接。' }] };
@@ -46,6 +48,9 @@ const errorMessage = (error: unknown) => error instanceof Error ? error.message 
 export default function App() {
   const demo = new URLSearchParams(window.location.search).get('preview') === 'demo';
   const [snapshot, setSnapshot] = useState<Snapshot>(demo ? demoSnapshot : emptySnapshot);
+  const [appVersion, setAppVersion] = useState(packageMetadata.version);
+  const [pendingWifi, setPendingWifi] = useState<boolean | null>(null);
+  const wifiChangePending = useRef(false);
   const [page, setPage] = useState<'devices' | 'settings'>('devices');
   const settingsQueue = useRef<Promise<unknown>>(Promise.resolve());
   const latestSettings = useRef(snapshot.settings);
@@ -68,16 +73,32 @@ export default function App() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [logsOpen, setLogsOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const selectedDevice = snapshot.devices.find(d => d.id === snapshot.settings.lastDeviceId) ?? (snapshot.devices.length === 1 ? snapshot.devices[0] : null);
-  const usbDevices = snapshot.devices.filter(d => hasTransport(d, 'usb'));
+  const wifiEnabled = pendingWifi ?? snapshot.settings.wifiEnabled;
+  const devices = wifiEnabled ? snapshot.devices : snapshot.devices.map(device => ({ ...device, wifiAddress: null, transports: device.transports.filter(transport => transport.kind === 'usb') })).filter(device => device.transports.length > 0);
+  const savedDevices = wifiEnabled ? snapshot.savedDevices : [];
+  const preferredTransport = !wifiEnabled && snapshot.settings.preferredTransport === 'wifi' ? 'auto' : snapshot.settings.preferredTransport;
+  const selectedDevice = devices.find(d => d.id === snapshot.settings.lastDeviceId) ?? (devices.length === 1 ? devices[0] : null);
+  const usbDevices = devices.filter(d => hasTransport(d, 'usb'));
   const session = snapshot.session;
   const selectedSession = session?.deviceId === selectedDevice?.id ? session : null;
-  const busy = Boolean(action) || snapshot.busy;
+  const busy = Boolean(action) || snapshot.busy || pendingWifi !== null;
   const audioUnsupported = selectedDevice?.audioSupported === false || (selectedDevice?.apiLevel != null && selectedDevice.apiLevel < 30);
   const selectedReady = selectedDevice ? isReady(selectedDevice) : false;
   const unauthorized = selectedDevice?.transports.some(t => t.state === 'unauthorized');
 
   useEffect(() => { latestSettings.current = snapshot.settings; }, [snapshot.settings]);
+
+  useEffect(() => {
+    if (!isTauri) return;
+    let alive = true;
+    void getVersion().then(version => { if (alive) setAppVersion(version); }).catch(() => undefined);
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    if (wifiEnabled) return;
+    setWirelessOpen(false); setWirelessResult(null); setFormError(null);
+  }, [wifiEnabled]);
 
   function showToast(message: string, kind: 'success' | 'error' | 'info' = 'info') {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -161,12 +182,31 @@ export default function App() {
     return save;
   }
 
+  function toggleWifi() {
+    if (!loaded || busy || wifiChangePending.current) return;
+    const enabled = !wifiEnabled;
+    wifiChangePending.current = true;
+    setPendingWifi(enabled);
+    if (!enabled) setWirelessOpen(false);
+    const save = settingsQueue.current.catch(() => undefined).then(async () => {
+      if (demo) {
+        setSnapshot(current => ({ ...current, settings: { ...current.settings, wifiEnabled: enabled, preferredTransport: !enabled && current.settings.preferredTransport === 'wifi' ? 'auto' : current.settings.preferredTransport }, session: !enabled && current.session?.transport === 'wifi' ? null : current.session }));
+        return;
+      }
+      const next = await perform('wifi', () => api.setWifiEnabled(enabled));
+      if (next) latestSettings.current = next.settings;
+    }).finally(() => { wifiChangePending.current = false; setPendingWifi(null); });
+    settingsQueue.current = save;
+    void save;
+  }
+
   function selectDevice(device: Device) {
     if (demo) { setSnapshot(current => ({ ...current, settings: { ...current.settings, lastDeviceId: device.id } })); return; }
     void perform('select', () => api.selectDevice(device.id));
   }
 
   function openWireless(tab: 'usb' | 'pair' | 'manual' = 'usb') {
+    if (!wifiEnabled || wifiChangePending.current) return;
     setWirelessTab(tab); setFormError(null); setWirelessResult(null);
     setWirelessDeviceId(selectedDevice && hasTransport(selectedDevice, 'usb') ? selectedDevice.id : usbDevices[0]?.id ?? '');
     const savedDevice = snapshot.savedDevices.find(device => device.id === (selectedDevice?.id ?? snapshot.settings.lastDeviceId));
@@ -175,6 +215,7 @@ export default function App() {
   }
 
   async function configureUsb() {
+    if (!wifiEnabled || wifiChangePending.current) return;
     const deviceId = wirelessDeviceId || usbDevices[0]?.id;
     if (!deviceId) return;
     const next = await perform('configure', () => api.configureWireless(deviceId));
@@ -186,6 +227,7 @@ export default function App() {
 
   async function submitPair(event: FormEvent) {
     event.preventDefault();
+    if (!wifiEnabled || wifiChangePending.current) return;
     if (!addressValid(pairAddress)) { setFormError('请输入包含端口的配对地址，例如 192.168.1.8:37123。'); return; }
     if (!/^\d{6}$/.test(pairCode.trim())) { setFormError('请输入手机上显示的 6 位配对码。'); return; }
     if (pairConnectAddress.trim() && !addressValid(pairConnectAddress)) { setFormError('请检查连接地址，地址后需要填写端口。'); return; }
@@ -195,6 +237,7 @@ export default function App() {
 
   async function submitManual(event: FormEvent) {
     event.preventDefault();
+    if (!wifiEnabled || wifiChangePending.current) return;
     if (!addressValid(manualAddress)) { setFormError('请输入设备 IP 和端口，例如 192.168.1.8:5555。'); return; }
     const next = await perform('connect', () => api.connectWireless(manualAddress.trim()));
     if (next) {
@@ -207,11 +250,11 @@ export default function App() {
     try { await (kind === 'minimize' ? api.minimizeWindow() : api.hideWindow()); } catch (error) { showToast(errorMessage(error), 'error'); }
   }
 
-  const cannotStartTransport = selectedDevice && snapshot.settings.preferredTransport !== 'auto' && !hasTransport(selectedDevice, snapshot.settings.preferredTransport);
+  const cannotStartTransport = selectedDevice && preferredTransport !== 'auto' && !hasTransport(selectedDevice, preferredTransport);
 
   return <div className="app-shell">
     <header className="titlebar" data-tauri-drag-region>
-      <div className="brand" data-tauri-drag-region><MirrorMark/><span data-tauri-drag-region>Qzz Mirror</span><span className="brand-divider"/><span className="brand-cn" data-tauri-drag-region>轻镜</span></div>
+      <div className="brand" data-tauri-drag-region><MirrorMark/><span data-tauri-drag-region>Qzz Mirror</span><span className="brand-divider"/><span className="brand-cn" data-tauri-drag-region>轻镜</span><span className="version-badge" data-tauri-drag-region aria-label={`版本 ${appVersion}`}>v{appVersion}</span></div>
       <div className="titlebar-right">
         {(!isTauri || demo) && <span className="preview-label">{demo ? '演示预览 · 非真实设备' : '界面预览'}</span>}
         <button className={`icon-button settings-button ${page === 'settings' ? 'active' : ''}`} onClick={() => { setPage('settings'); setLogsOpen(false); }} aria-label="设置" title="设置"><Icon name="settings" size={18}/></button>
@@ -224,36 +267,36 @@ export default function App() {
 
     {page === 'settings' ? <SettingsPage settings={snapshot.settings} audioUnsupported={audioUnsupported} disabled={busy && action !== 'settings'} sessionActive={Boolean(session)} saving={action === 'settings'} onSave={updateSettings} onBack={() => setPage('devices')}/> : <div className="workspace">
       <aside className="sidebar">
-        <div className="sidebar-heading"><span>设备 <span className="count-badge">{snapshot.devices.length}</span></span><button className={`icon-button ${action === 'refresh' ? 'spinning' : ''}`} disabled={busy} onClick={() => void perform('refresh', () => api.refresh())} aria-label="刷新设备" title="刷新设备"><Icon name="refresh" size={16}/></button></div>
+        <div className="sidebar-heading"><span>设备 <span className="count-badge">{devices.length}</span></span><button className={`icon-button ${action === 'refresh' ? 'spinning' : ''}`} disabled={busy} onClick={() => void perform('refresh', () => api.refresh())} aria-label="刷新设备" title="刷新设备"><Icon name="refresh" size={16}/></button></div>
         <div className="device-list">
-          {!loaded ? <div className="list-placeholder"><span className="spinner"/>查找设备中</div> : snapshot.devices.length === 0 ? <div className="sidebar-empty"><Icon name="phone" size={23}/><span>暂无设备</span></div> : snapshot.devices.map(device => <button key={device.id} className={`device-item ${selectedDevice?.id === device.id ? 'selected' : ''}`} disabled={busy && action !== 'settings'} onClick={() => selectDevice(device)}>
+          {!loaded ? <div className="list-placeholder"><span className="spinner"/>查找设备中</div> : devices.length === 0 ? <div className="sidebar-empty"><Icon name="phone" size={23}/><span>暂无设备</span></div> : devices.map(device => <button key={device.id} className={`device-item ${selectedDevice?.id === device.id ? 'selected' : ''}`} disabled={busy && action !== 'settings'} onClick={() => selectDevice(device)}>
             <span className="device-item-icon"><Icon name="phone" size={24}/><i className={isReady(device) ? 'online' : 'offline'}/></span>
             <span className="device-item-info"><strong>{device.name || device.model}</strong><span>{device.androidVersion ? `Android ${device.androidVersion}` : 'Android 设备'}</span><span className="device-transport-tags">{hasTransport(device, 'usb') && <span><Icon name="usb" size={11}/>USB</span>}{hasTransport(device, 'wifi') && <span><Icon name="wifi" size={11}/>Wi-Fi</span>}{!isReady(device) && <span className="unavailable-tag">{device.transports.some(t => t.state === 'unauthorized') ? '等待授权' : '暂不可用'}</span>}</span></span>
             {selectedDevice?.id === device.id && <span className="selected-indicator"/>}
           </button>)}
         </div>
-        {snapshot.savedDevices.length > 0 && <div className="saved-section"><span className="sidebar-section-label">已保存的无线设备</span>{snapshot.savedDevices.map(device => <button key={`${device.id}-${device.address}`} className="saved-device" onClick={() => { openWireless('manual'); setManualAddress(device.address); }}><Icon name="wifi" size={15}/><span><strong>{device.name}</strong><small>{device.address}</small></span><Icon name="chevron" size={12}/></button>)}</div>}
-        <div className="sidebar-bottom"><button className="add-wireless" onClick={() => openWireless()}><Icon name="plus" size={17}/>连接无线设备</button></div>
+        {savedDevices.length > 0 && <div className="saved-section"><span className="sidebar-section-label">已保存的无线设备</span>{savedDevices.map(device => <button key={`${device.id}-${device.address}`} className="saved-device" onClick={() => { openWireless('manual'); setManualAddress(device.address); }}><Icon name="wifi" size={15}/><span><strong>{device.name}</strong><small>{device.address}</small></span><Icon name="chevron" size={12}/></button>)}</div>}
+        <div className="sidebar-bottom"><div className="wifi-toggle-row"><span><Icon name="wifi" size={16}/>Wi-Fi</span><button className={`toggle-switch ${wifiEnabled ? 'on' : ''}`} role="switch" aria-checked={wifiEnabled} aria-label="启用 Wi-Fi 连接" aria-busy={pendingWifi !== null} disabled={!loaded || busy} onClick={toggleWifi} title={wifiEnabled ? '关闭 Wi-Fi 连接' : '开启 Wi-Fi 连接'}><span/></button></div><button className="add-wireless" disabled={!wifiEnabled || busy} onClick={() => openWireless()}><Icon name="plus" size={17}/>连接无线设备</button></div>
       </aside>
 
       <main className="main-content">
         <div className="page-heading"><h1>设备投屏</h1><button className={`text-button log-trigger ${snapshot.logs.some(l => l.level === 'error') ? 'has-error' : ''}`} onClick={() => setLogsOpen(true)}><Icon name="log" size={16}/>连接日志</button></div>
         {connectionError && isTauri && <div className="inline-alert"><Icon name="alert" size={17}/><span>{connectionError}</span><button disabled={busy} onClick={() => void perform('refresh', () => api.refresh())}>重试</button></div>}
-        {snapshot.lastError && <div className="inline-alert device-error" role="alert"><Icon name="alert" size={18}/><div className="device-error-copy"><strong>连接遇到问题</strong><span>{snapshot.lastError}</span></div><div className="device-error-actions"><button disabled={busy} onClick={() => selectedDevice && selectedReady && !session ? void perform('start', () => api.startMirror(selectedDevice.id, snapshot.settings.preferredTransport)) : void perform('refresh', () => api.refresh())}>{selectedDevice && selectedReady && !session ? '重试投屏' : '刷新设备'}</button><button className="reconnect-button" onClick={() => openWireless('manual')}><Icon name="wifi" size={13}/>重新连接</button></div></div>}
+        {snapshot.lastError && <div className="inline-alert device-error" role="alert"><Icon name="alert" size={18}/><div className="device-error-copy"><strong>连接遇到问题</strong><span>{snapshot.lastError}</span></div><div className="device-error-actions"><button disabled={busy} onClick={() => selectedDevice && selectedReady && !session ? void perform('start', () => api.startMirror(selectedDevice.id, preferredTransport)) : void perform('refresh', () => api.refresh())}>{selectedDevice && selectedReady && !session ? '重试投屏' : '刷新设备'}</button><button className="reconnect-button" disabled={!wifiEnabled || busy} onClick={() => openWireless('manual')}><Icon name="wifi" size={13}/>重新连接</button></div></div>}
         {session && !selectedSession && <div className="session-notice"><span className="status-dot"/><span>{session.deviceName} 正在投屏</span><button disabled={action === 'stop'} onClick={() => void perform('stop', () => api.stopMirror())}>停止投屏</button></div>}
         {selectedDevice ? <section className={`mirror-panel ${selectedSession ? 'is-mirroring' : ''}`}>
           <div className="device-summary"><span className="summary-device-icon"><Icon name="phone" size={32}/></span><div className="summary-copy"><h2>{selectedDevice.name || selectedDevice.model}</h2><p className="device-meta">{selectedDevice.androidVersion ? `Android ${selectedDevice.androidVersion}` : 'Android 设备'}<span>·</span>{hasTransport(selectedDevice, 'usb') && hasTransport(selectedDevice, 'wifi') ? 'USB / Wi-Fi' : hasTransport(selectedDevice, 'usb') ? 'USB' : hasTransport(selectedDevice, 'wifi') ? 'Wi-Fi' : unauthorized ? '请允许 USB 调试' : '未连接'}</p></div><span className={`connection-pill ${selectedReady ? '' : 'pending'}`}><span className="status-dot"/>{selectedSession?.phase === 'running' ? `${selectedSession.transport === 'usb' ? 'USB' : 'Wi-Fi'} 投屏中` : selectedSession?.phase === 'reconnecting' ? '恢复连接中' : selectedSession?.phase === 'starting' ? '启动中' : selectedReady ? '已就绪' : unauthorized ? '等待授权' : '暂不可用'}</span></div>
-          <div className="transport-control"><span className="control-label">连接方式</span><div className="segmented-control" aria-label="连接方式">{(['auto', 'usb', 'wifi'] as const).map(transport => <button key={transport} aria-pressed={snapshot.settings.preferredTransport === transport} className={snapshot.settings.preferredTransport === transport ? 'active' : ''} title={transport === 'auto' ? '优先使用 USB，断线后尝试已配置的 Wi-Fi' : undefined} disabled={busy} onClick={() => void updateSettings({ preferredTransport: transport })}>{transport === 'auto' ? '自动' : <><Icon name={transport} size={14}/>{transport === 'usb' ? 'USB' : 'Wi-Fi'}</>}</button>)}</div></div>
-          {cannotStartTransport && <div className="transport-note unavailable"><Icon name="alert" size={14}/><span>{snapshot.settings.preferredTransport === 'usb' ? 'USB 未连接，请插入数据线。' : 'Wi-Fi 未连接，请先配置无线。'}</span></div>}
-          <div className="mirror-actions"><button className="secondary-button wireless-action" onClick={() => openWireless()}><Icon name="wifi" size={16}/>配置无线</button>{selectedSession ? <button className="primary-button stop-button" disabled={action === 'stop'} onClick={() => void perform('stop', () => api.stopMirror())}>{action === 'stop' ? <span className="spinner"/> : <Icon name="stop" size={17}/>}停止投屏</button> : <button className="primary-button start-button" disabled={busy || !selectedReady || Boolean(session) || Boolean(cannotStartTransport)} onClick={() => void perform('start', () => api.startMirror(selectedDevice.id, snapshot.settings.preferredTransport))}>{action === 'start' ? <span className="spinner"/> : <Icon name="play" size={17}/>} {action === 'start' ? '正在启动' : '开始投屏'}<Icon name="arrow" size={16}/></button>}</div>
-        </section> : <section className="empty-panel"><span className="empty-main-icon"><Icon name="phone" size={32}/></span><h2>{!loaded ? '正在查找设备' : snapshot.devices.length ? '选择一台设备' : '暂无连接的设备'}</h2><div className="empty-actions">{snapshot.devices.length === 0 && <><button className="secondary-button" onClick={() => setHelpOpen(true)}><Icon name="usb" size={16}/>USB 连接指南</button><button className="primary-button" onClick={() => openWireless('pair')}><Icon name="wifi" size={16}/>连接无线设备</button></>}</div></section>}
+          <div className="transport-control"><span className="control-label">连接方式</span><div className="segmented-control" aria-label="连接方式">{(['auto', 'usb', 'wifi'] as const).map(transport => <button key={transport} aria-pressed={preferredTransport === transport} className={preferredTransport === transport ? 'active' : ''} title={transport === 'auto' ? (wifiEnabled ? '优先使用 USB，断线后尝试已配置的 Wi-Fi' : '仅使用 USB 连接') : transport === 'wifi' && !wifiEnabled ? 'Wi-Fi 已关闭' : undefined} disabled={busy || (transport === 'wifi' && !wifiEnabled)} onClick={() => void updateSettings({ preferredTransport: transport })}>{transport === 'auto' ? '自动' : <><Icon name={transport} size={14}/>{transport === 'usb' ? 'USB' : 'Wi-Fi'}</>}</button>)}</div></div>
+          {cannotStartTransport && <div className="transport-note unavailable"><Icon name="alert" size={14}/><span>{preferredTransport === 'usb' ? 'USB 未连接，请插入数据线。' : 'Wi-Fi 未连接，请先配置无线。'}</span></div>}
+          <div className="mirror-actions"><button className="secondary-button wireless-action" disabled={!wifiEnabled || busy} onClick={() => openWireless()}><Icon name="wifi" size={16}/>配置无线</button>{selectedSession ? <button className="primary-button stop-button" disabled={action === 'stop'} onClick={() => void perform('stop', () => api.stopMirror())}>{action === 'stop' ? <span className="spinner"/> : <Icon name="stop" size={17}/>}停止投屏</button> : <button className="primary-button start-button" disabled={busy || !selectedReady || Boolean(session) || Boolean(cannotStartTransport)} onClick={() => void perform('start', () => api.startMirror(selectedDevice.id, preferredTransport))}>{action === 'start' ? <span className="spinner"/> : <Icon name="play" size={17}/>} {action === 'start' ? '正在启动' : '开始投屏'}<Icon name="arrow" size={16}/></button>}</div>
+        </section> : <section className="empty-panel"><span className="empty-main-icon"><Icon name="phone" size={32}/></span><h2>{!loaded ? '正在查找设备' : devices.length ? '选择一台设备' : '暂无连接的设备'}</h2><div className="empty-actions">{devices.length === 0 && <><button className="secondary-button" onClick={() => setHelpOpen(true)}><Icon name="usb" size={16}/>USB 连接指南</button><button className="primary-button" disabled={!wifiEnabled || busy} onClick={() => openWireless('pair')}><Icon name="wifi" size={16}/>连接无线设备</button></>}</div></section>}
       </main>
     </div>}
 
-    {wirelessOpen && <div className="modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget && !busy) setWirelessOpen(false); }}><section className="modal wireless-modal" role="dialog" aria-modal="true" aria-labelledby="wireless-title"><div className="modal-heading"><span className="modal-heading-icon"><Icon name="wifi" size={22}/></span><div><h2 id="wireless-title">连接无线设备</h2><p>让手机与电脑连接同一局域网</p></div><button className="icon-button" aria-label="关闭无线配置" disabled={busy} onClick={() => setWirelessOpen(false)}><Icon name="close" size={19}/></button></div><div className="modal-tabs" role="tablist">{([{ id: 'usb', label: 'USB 辅助配置' }, { id: 'pair', label: '配对码连接' }, { id: 'manual', label: '手动重连' }] as const).map(tab => <button key={tab.id} role="tab" aria-selected={wirelessTab === tab.id} disabled={busy} className={wirelessTab === tab.id ? 'active' : ''} onClick={() => { setWirelessTab(tab.id); setFormError(null); setWirelessResult(null); }}>{tab.label}</button>)}</div><div className="modal-body">
+    {wirelessOpen && wifiEnabled && <div className="modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget && !busy) setWirelessOpen(false); }}><section className="modal wireless-modal" role="dialog" aria-modal="true" aria-labelledby="wireless-title"><div className="modal-heading"><span className="modal-heading-icon"><Icon name="wifi" size={22}/></span><div><h2 id="wireless-title">连接无线设备</h2><p>让手机与电脑连接同一局域网</p></div><button className="icon-button" aria-label="关闭无线配置" disabled={busy} onClick={() => setWirelessOpen(false)}><Icon name="close" size={19}/></button></div><div className="modal-tabs" role="tablist">{([{ id: 'usb', label: 'USB 辅助配置' }, { id: 'pair', label: '配对码连接' }, { id: 'manual', label: '手动重连' }] as const).map(tab => <button key={tab.id} role="tab" aria-selected={wirelessTab === tab.id} disabled={busy} className={wirelessTab === tab.id ? 'active' : ''} onClick={() => { setWirelessTab(tab.id); setFormError(null); setWirelessResult(null); }}>{tab.label}</button>)}</div><div className="modal-body">
           {wirelessTab === 'usb' && <><div className="tab-intro"><h3>先插线，随后就能无线使用</h3><p>首次设置需要数据线，完成后可使用 Wi-Fi 投屏。</p></div><ol className="instruction-steps"><li><span>1</span><div><strong>用数据线连接设备</strong><p>开启「开发者选项 → USB 调试」，在手机上允许授权。</p></div></li><li><span>2</span><div><strong>确认已连接 Wi-Fi</strong><p>设备与电脑需在同一网络，保持设备屏幕解锁。</p></div></li><li><span>3</span><div><strong>配置成功后再拔线</strong><p>轻镜会自动获取地址，开启并验证无线连接。</p></div></li></ol>{usbDevices.length ? <label className="form-field"><span>选择 USB 设备</span><select value={wirelessDeviceId || usbDevices[0]?.id} onChange={e => setWirelessDeviceId(e.target.value)} disabled={busy}>{usbDevices.map(device => <option key={device.id} value={device.id}>{device.name} · USB 已连接</option>)}</select></label> : <div className="form-hint"><Icon name="usb" size={17}/><span>尚未检测到已授权的 USB 设备。连接后点击刷新。</span><button className="text-button" disabled={busy} onClick={() => void perform('refresh', () => api.refresh())}>刷新</button></div>}<button className="primary-button modal-submit" disabled={busy || usbDevices.length === 0} onClick={() => void configureUsb()}>{action === 'configure' ? <span className="spinner"/> : <Icon name="wifi" size={17}/>} {action === 'configure' ? '正在配置并验证…' : '配置并验证无线连接'}</button></>}
           {wirelessTab === 'pair' && <form onSubmit={event => void submitPair(event)}><div className="tab-intro"><h3>用配对码连接，无需插线</h3><p>适用于 Android 11 及以上。开启「开发者选项 → 无线调试」。</p></div><div className="pair-tip"><span className="step-number">1</span><p>在手机上点击<strong>「使用配对码配对设备」</strong><br/><span>将弹窗里的地址和配对码填在下方。</span></p></div><div className="form-row"><label className="form-field address-field"><span>配对地址</span><input autoComplete="off" placeholder="192.168.1.8:37123" value={pairAddress} onChange={e => setPairAddress(e.target.value)} disabled={busy}/></label><label className="form-field code-field"><span>6 位配对码</span><input inputMode="numeric" autoComplete="off" maxLength={6} placeholder="000000" value={pairCode} onChange={e => setPairCode(e.target.value.replace(/\D/g, ''))} disabled={busy}/></label></div><label className="form-field"><span>连接地址 <small>可选</small></span><input autoComplete="off" placeholder="无线调试主页显示的 IP 地址和端口" value={pairConnectAddress} onChange={e => setPairConnectAddress(e.target.value)} disabled={busy}/><small>配对端口与连接端口通常不同。留空时会尝试自动发现。</small></label><button type="submit" className="primary-button modal-submit" disabled={busy || !pairAddress || pairCode.length !== 6}>{action === 'pair' ? <span className="spinner"/> : <Icon name="wifi" size={17}/>} {action === 'pair' ? '正在配对…' : '配对并连接'}</button></form>}
-          {wirelessTab === 'manual' && <form onSubmit={event => void submitManual(event)}><div className="tab-intro"><h3>重新连接已配置的设备</h3><p>输入无线调试地址，或选用之前保存的地址。</p></div>{snapshot.savedDevices.length > 0 && <div className="saved-addresses">{snapshot.savedDevices.map(device => <button type="button" key={device.address} className={manualAddress === device.address ? 'selected' : ''} onClick={() => setManualAddress(device.address)}><Icon name="phone" size={18}/><span><strong>{device.name}</strong><small>{device.address}</small></span>{manualAddress === device.address && <Icon name="check" size={15}/>}</button>)}</div>}<label className="form-field"><span>设备 IP 与端口</span><input autoComplete="off" placeholder="192.168.1.8:5555" value={manualAddress} onChange={e => setManualAddress(e.target.value)} disabled={busy}/><small>设备重启或网络变化后，可能需要重新配置无线连接。</small></label><button type="submit" className="primary-button modal-submit" disabled={busy || !manualAddress}>{action === 'connect' ? <span className="spinner"/> : <Icon name="wifi" size={17}/>} {action === 'connect' ? '正在连接…' : '连接设备'}</button></form>}
+          {wirelessTab === 'manual' && <form onSubmit={event => void submitManual(event)}><div className="tab-intro"><h3>重新连接已配置的设备</h3><p>输入无线调试地址，或选用之前保存的地址。</p></div>{savedDevices.length > 0 && <div className="saved-addresses">{savedDevices.map(device => <button type="button" key={device.address} className={manualAddress === device.address ? 'selected' : ''} onClick={() => setManualAddress(device.address)}><Icon name="phone" size={18}/><span><strong>{device.name}</strong><small>{device.address}</small></span>{manualAddress === device.address && <Icon name="check" size={15}/>}</button>)}</div>}<label className="form-field"><span>设备 IP 与端口</span><input autoComplete="off" placeholder="192.168.1.8:5555" value={manualAddress} onChange={e => setManualAddress(e.target.value)} disabled={busy}/><small>设备重启或网络变化后，可能需要重新配置无线连接。</small></label><button type="submit" className="primary-button modal-submit" disabled={busy || !manualAddress}>{action === 'connect' ? <span className="spinner"/> : <Icon name="wifi" size={17}/>} {action === 'connect' ? '正在连接…' : '连接设备'}</button></form>}
           {formError && <div className="modal-feedback error" role="alert"><Icon name="alert" size={17}/><span>{formError}</span></div>}{wirelessResult && <div className="modal-feedback success" role="status"><Icon name="check" size={17}/><span>{wirelessResult}</span></div>}
         </div><div className="modal-footer"><Icon name="help" size={14}/><span>连接问题？</span><button onClick={() => { setWirelessOpen(false); setHelpOpen(true); }}>查看连接指南</button><button className="modal-done" disabled={busy} onClick={() => setWirelessOpen(false)}>完成</button></div></section></div>}
 

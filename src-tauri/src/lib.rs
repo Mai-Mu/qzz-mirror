@@ -2,6 +2,9 @@ mod engine;
 mod models;
 mod navigation_bar;
 mod scrcpy_input;
+mod usb_notifications;
+mod device_toast;
+mod usb_notification_bridge;
 
 use engine::Engine;
 use models::{Settings, Snapshot, TransportPreference};
@@ -24,6 +27,11 @@ async fn refresh_devices(engine: State<'_, Engine>) -> Result<Snapshot, String> 
 #[tauri::command]
 async fn save_settings(engine: State<'_, Engine>, settings: Settings) -> Result<Snapshot, String> {
     engine.save_settings(settings).await
+}
+
+#[tauri::command]
+async fn set_wifi_enabled(engine: State<'_, Engine>, enabled: bool) -> Result<Snapshot, String> {
+    engine.set_wifi_enabled(enabled).await
 }
 
 #[tauri::command]
@@ -57,18 +65,23 @@ async fn pair_wireless(engine: State<'_, Engine>, pairing_address: String, code:
 }
 
 #[tauri::command]
-fn hide_window(window: tauri::WebviewWindow) -> Result<(), String> {
-    window.hide().map_err(|e| e.to_string())
+fn hide_window(window: tauri::WebviewWindow, engine: State<'_, Engine>) -> Result<(), String> {
+    window.hide().map_err(|e| e.to_string())?;
+    engine.set_notification_background(true);
+    Ok(())
 }
 
 #[tauri::command]
-fn minimize_window(window: tauri::WebviewWindow) -> Result<(), String> {
-    window.minimize().map_err(|e| e.to_string())
+fn minimize_window(window: tauri::WebviewWindow, engine: State<'_, Engine>) -> Result<(), String> {
+    window.minimize().map_err(|e| e.to_string())?;
+    engine.set_notification_background(true);
+    Ok(())
 }
 
 #[tauri::command]
 async fn quit_app(app: tauri::AppHandle, engine: State<'_, Engine>, exit: State<'_, ExitState>) -> Result<(), String> {
     if !exit.quitting.swap(true, Ordering::SeqCst) {
+        stop_notifications(&app);
         engine.shutdown().await;
         app.exit(0);
     }
@@ -80,6 +93,13 @@ fn show_main(app: &tauri::AppHandle) {
         let _ = window.show();
         let _ = window.unminimize();
         let _ = window.set_focus();
+        usb_notification_bridge::sync_background(app);
+    }
+}
+
+fn stop_notifications(app: &tauri::AppHandle) {
+    if let Some(bridge) = app.try_state::<usb_notification_bridge::UsbNotificationBridge>() {
+        bridge.shutdown();
     }
 }
 
@@ -111,6 +131,15 @@ pub fn run() {
         .setup(|app| {
             let engine = Engine::new(runtime_dir(app.handle())?, data_dir(app.handle())?)
                 .map_err(std::io::Error::other)?;
+            app.manage(engine.clone());
+            usb_notification_bridge::sync_background(app.handle());
+            match usb_notification_bridge::UsbNotificationBridge::start(app.handle().clone(), engine.clone()) {
+                Ok(bridge) => { app.manage(bridge); }
+                Err(error) => {
+                    let reporting_engine = engine.clone();
+                    tauri::async_runtime::spawn(async move { reporting_engine.report_notification_error(error).await; });
+                }
+            }
             let background = engine.clone();
             tauri::async_runtime::spawn(async move { background.spawn_background(); });
             let navigation_engine = engine.clone();
@@ -134,7 +163,6 @@ pub fn run() {
                 }
             });
             app.manage(navigation);
-            app.manage(engine);
             let show = MenuItem::with_id(app, "show", "打开轻镜", true, None::<&str>)?;
             let stop = MenuItem::with_id(app, "stop", "停止投屏", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
@@ -153,6 +181,7 @@ pub fn run() {
                     }
                     "quit" => {
                         if !app.state::<ExitState>().quitting.swap(true, Ordering::SeqCst) {
+                            stop_notifications(app);
                             let app = app.clone();
                             let engine = app.state::<Engine>().inner().clone();
                             tauri::async_runtime::spawn(async move { engine.shutdown().await; app.exit(0); });
@@ -169,13 +198,20 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
+            if window.label() != "main" { return; }
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
-                let _ = window.hide();
+                if window.hide().is_ok() {
+                    if let Some(engine) = window.app_handle().try_state::<Engine>() {
+                        engine.set_notification_background(true);
+                    }
+                }
+            } else if matches!(event, tauri::WindowEvent::Resized(_) | tauri::WindowEvent::Focused(_)) {
+                usb_notification_bridge::sync_background(window.app_handle());
             }
         })
         .invoke_handler(tauri::generate_handler![
-            get_snapshot, refresh_devices, save_settings, select_device,
+            get_snapshot, refresh_devices, save_settings, set_wifi_enabled, select_device,
             start_mirror, stop_mirror, configure_wireless, connect_wireless,
             pair_wireless, hide_window, minimize_window, quit_app,
         ])
@@ -192,6 +228,7 @@ pub fn run() {
     app.run(|app, event| {
         if let tauri::RunEvent::ExitRequested { api, .. } = event {
             if !app.state::<ExitState>().quitting.swap(true, Ordering::SeqCst) {
+                stop_notifications(app);
                 api.prevent_exit();
                 let handle = app.clone();
                 let engine = app.state::<Engine>().inner().clone();

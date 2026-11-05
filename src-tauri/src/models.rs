@@ -12,6 +12,8 @@ pub enum TransportPreference {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Settings {
+    /// Controls only this application's wireless device features.
+    pub wifi_enabled: bool,
     /// None keeps the device's own maximum frame rate (no scrcpy cap).
     pub max_fps: Option<u16>,
     pub audio: bool,
@@ -23,6 +25,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            wifi_enabled: true,
             max_fps: None,
             audio: true,
             always_on_top: false,

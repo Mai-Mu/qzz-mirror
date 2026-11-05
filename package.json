@@ -1,7 +1,7 @@
 {
   "name": "qzz-mirror",
   "private": true,
-  "version": "0.3.1",
+  "version": "0.4.1",
   "description": "Qzz Mirror · 轻镜 — 简单顺手的安卓投屏工具",
   "type": "module",
   "scripts": {
@@ -14,7 +14,8 @@
     "test:navigation": "node scripts/test-navigation.mjs",
     "test:sdl-navigation": "node scripts/test-sdl-navigation.mjs",
     "core:prepare": "node scripts/prepare-core.mjs",
-    "package": "node scripts/package.mjs"
+    "package": "node scripts/package.mjs",
+    "package:installer": "node scripts/package-installer.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.10.0",

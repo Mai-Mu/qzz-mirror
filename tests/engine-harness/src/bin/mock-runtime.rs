@@ -21,14 +21,21 @@ fn main() {
  let mut calls = fs::OpenOptions::new().create(true).append(true).open(state.join("adb-calls.log")).unwrap(); writeln!(calls,"{}", a.join(" ")).unwrap();
  match a.as_slice() {
   ["devices", "-l"] => {
+   if state.join("devices-error").exists() { eprintln!("mock ADB device query failed"); std::process::exit(1); }
+   if let Ok(devices) = fs::read_to_string(state.join("devices-list.txt")) { print!("{devices}"); return; }
    println!("List of devices attached");
    if state.join("usb-online").exists() { println!("USB-123 device usb:1-2 model:Test_Android transport_id:1"); }
    if state.join("wifi-online").exists() { println!("192.168.1.22:5555 device model:Test_Android transport_id:2"); }
   }
   ["-s", serial, "shell", "getprop"] => {
+   if state.join("metadata-error").exists() { eprintln!("mock USB identity unavailable"); std::process::exit(1); }
    if state.join("delay-metadata").exists() {
     fs::write(state.join("metadata-waiting"), "").unwrap();
     while state.join("delay-metadata").exists() { thread::sleep(Duration::from_millis(20)); }
+   }
+   if let Ok(devices) = fs::read_to_string(state.join("replace-devices-after-metadata.txt")) {
+    fs::write(state.join("devices-list.txt"), devices).unwrap();
+    fs::remove_file(state.join("replace-devices-after-metadata.txt")).unwrap();
    }
    let identity = if serial.contains(':') && state.join("identity-missing").exists() { "" } else if serial.contains(':') && state.join("identity-b").exists() { "HARDWARE-OTHER" } else { "HARDWARE-123" }; println!("[ro.serialno]: [{identity}]\n[ro.product.model]: [Test Android]\n[ro.build.version.release]: [9]\n[ro.build.version.sdk]: [28]");
   },

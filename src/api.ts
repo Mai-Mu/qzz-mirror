@@ -6,7 +6,7 @@ const browserSnapshot: Snapshot = {
   devices: [], savedDevices: [], session: null, logs: [],
   engineVersion: 'scrcpy', busy: false, lastError: null,
   settings: {
-    maxFps: null, audio: true, alwaysOnTop: false,
+    wifiEnabled: true, maxFps: null, audio: true, alwaysOnTop: false,
     preferredTransport: 'auto', lastDeviceId: null,
   },
 };
@@ -22,6 +22,9 @@ export const api = {
   saveSettings: (settings: Settings) => isTauri
     ? invoke<Snapshot>('save_settings', { settings })
     : Promise.resolve(structuredClone(Object.assign(browserSnapshot, { settings }))),
+  setWifiEnabled: (enabled: boolean) => isTauri
+    ? invoke<Snapshot>('set_wifi_enabled', { enabled })
+    : Promise.resolve(structuredClone(Object.assign(browserSnapshot, { settings: { ...browserSnapshot.settings, wifiEnabled: enabled, preferredTransport: !enabled && browserSnapshot.settings.preferredTransport === 'wifi' ? 'auto' : browserSnapshot.settings.preferredTransport } }))),
   selectDevice: (deviceId: string | null) => desktopOnly<Snapshot>('select_device', { deviceId }),
   startMirror: (deviceId: string, transport: TransportPreference) => desktopOnly<Snapshot>('start_mirror', { deviceId, transport }),
   stopMirror: () => desktopOnly<Snapshot>('stop_mirror'),

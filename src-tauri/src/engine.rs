@@ -2,6 +2,7 @@
 //! kills a shared ADB server, or takes ownership of another app's scrcpy process.
 use crate::models::*;
 use crate::scrcpy_input::{NativeScrcpyDispatcher, NavigationDispatcher};
+use crate::usb_notifications::{UsbNotification, UsbNotificationEvent, UsbNotificationPolicy, UsbPresence};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -10,14 +11,14 @@ use std::{
     process::Stdio,
     sync::{
         atomic::{AtomicBool, AtomicU64, Ordering},
-        Arc,
+        Arc, Mutex as StdMutex,
     },
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use tokio::{
     io::{AsyncBufReadExt, AsyncRead, AsyncWriteExt, BufReader},
     process::{Child, Command},
-    sync::{Mutex, OwnedMutexGuard, RwLock},
+    sync::{broadcast, Mutex, OwnedMutexGuard, RwLock},
     time::{sleep, timeout},
 };
 
@@ -47,11 +48,19 @@ struct Inner {
     active: Mutex<Option<ActiveSession>>,
     navigation: Mutex<()>,
     navigation_dispatcher: Arc<dyn NavigationDispatcher>,
+    settings_update: Mutex<()>,
+    wifi_enabled: AtomicBool,
+    wifi_epoch: AtomicU64,
     cache: Mutex<HashMap<String, CachedMetadata>>,
     next_token: AtomicU64,
     stop_epoch: AtomicU64,
     background_started: AtomicBool,
     shutting_down: AtomicBool,
+    notification_background: AtomicBool,
+    notification_window_epoch: AtomicU64,
+    notification_starting: AtomicBool,
+    usb_notifications: StdMutex<UsbNotificationPolicy>,
+    usb_notification_events: broadcast::Sender<UsbNotificationEvent>,
 }
 
 struct State {
@@ -82,6 +91,14 @@ struct OperationGuard {
     busy: Arc<AtomicBool>,
 }
 
+struct NotificationStartGuard<'a>(&'a AtomicBool);
+impl<'a> NotificationStartGuard<'a> {
+    fn new(flag: &'a AtomicBool) -> Self { flag.store(true, Ordering::SeqCst); Self(flag) }
+}
+impl Drop for NotificationStartGuard<'_> {
+    fn drop(&mut self) { self.0.store(false, Ordering::SeqCst); }
+}
+
 impl Drop for OperationGuard {
     fn drop(&mut self) {
         self.busy.store(false, Ordering::SeqCst);
@@ -101,6 +118,7 @@ struct AdbDevice {
     state: String,
     model: String,
     kind: TransportKind,
+    transport_id: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -156,6 +174,8 @@ impl Engine {
         if let Some(message) = config_warning {
             logs.push(LogEntry { time: now(), level: LogLevel::Warning, message });
         }
+        let (usb_notification_events, _) = broadcast::channel(16);
+        let wifi_enabled = persisted.settings.wifi_enabled;
         Ok(Self(Arc::new(Inner {
             runtime_dir,
             data_dir,
@@ -174,12 +194,58 @@ impl Engine {
             active: Mutex::new(None),
             navigation: Mutex::new(()),
             navigation_dispatcher,
+            settings_update: Mutex::new(()),
+            wifi_enabled: AtomicBool::new(wifi_enabled),
+            wifi_epoch: AtomicU64::new(0),
             cache: Mutex::new(HashMap::new()),
             next_token: AtomicU64::new(1),
             stop_epoch: AtomicU64::new(0),
             background_started: AtomicBool::new(false),
             shutting_down: AtomicBool::new(false),
+            notification_background: AtomicBool::new(false),
+            notification_window_epoch: AtomicU64::new(0),
+            notification_starting: AtomicBool::new(false),
+            usb_notifications: StdMutex::new(UsbNotificationPolicy::default()),
+            usb_notification_events,
         })))
+    }
+
+    /// The desktop shell supplies actual hidden/minimized state. Losing focus
+    /// alone is deliberately insufficient to enable background reminders.
+    pub fn set_notification_background(&self, background: bool) {
+        if self.0.notification_background.swap(background, Ordering::SeqCst) != background {
+            self.0.notification_window_epoch.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+
+    pub fn subscribe_usb_notifications(&self) -> broadcast::Receiver<UsbNotificationEvent> {
+        self.0.usb_notification_events.subscribe()
+    }
+
+    pub fn clear_usb_notifications(&self) {
+        self.0.usb_notifications.lock().unwrap_or_else(|error| error.into_inner()).revoke_all();
+        let _ = self.0.usb_notification_events.send(UsbNotificationEvent::Clear);
+    }
+
+    pub fn dismiss_usb_notification(&self, token: &str) {
+        self.0.usb_notifications.lock().unwrap_or_else(|error| error.into_inner()).claim(token);
+        let _ = self.0.usb_notification_events.send(UsbNotificationEvent::Remove { token: token.into() });
+    }
+
+    pub async fn report_notification_error(&self, message: String) {
+        self.log(LogLevel::Warning, format!("USB 连接通知：{message}")).await;
+    }
+
+    pub async fn report_notification_submitted(&self) {
+        self.log(LogLevel::Info, "USB 连接通知已提交 Windows".into()).await;
+    }
+
+    pub async fn usb_notification_is_current(&self, token: &str) -> bool {
+        if self.0.shutting_down.load(Ordering::SeqCst) || self.0.notification_starting.load(Ordering::SeqCst) { return false; }
+        let session_present = self.0.state.read().await.session.is_some();
+        let active_present = self.0.active.lock().await.is_some();
+        if session_present || active_present || self.0.notification_starting.load(Ordering::SeqCst) { return false; }
+        self.0.usb_notifications.lock().unwrap_or_else(|error| error.into_inner()).is_current(token)
     }
 
     pub fn spawn_background(&self) {
@@ -217,10 +283,13 @@ impl Engine {
 
     pub async fn snapshot(&self) -> Snapshot {
         let state = self.0.state.read().await;
+        let wifi_enabled = self.0.wifi_enabled.load(Ordering::SeqCst);
+        let mut settings = state.settings.clone();
+        settings.wifi_enabled = wifi_enabled;
         Snapshot {
-            devices: state.devices.clone(),
-            saved_devices: state.saved_devices.clone(),
-            settings: state.settings.clone(),
+            devices: visible_devices(&state.devices, wifi_enabled),
+            saved_devices: if wifi_enabled { state.saved_devices.clone() } else { vec![] },
+            settings,
             session: state.session.clone(),
             logs: state.logs.clone(),
             engine_version: state.engine_version.clone(),
@@ -318,8 +387,8 @@ impl Engine {
         let result = async {
             let mut state = self.0.state.write().await;
             if let Some(id) = &device_id {
-                if !state.devices.iter().any(|device| &device.id == id)
-                    && !state.saved_devices.iter().any(|device| &device.id == id) {
+                if !visible_devices(&state.devices, self.0.wifi_enabled.load(Ordering::SeqCst)).iter().any(|device| &device.id == id)
+                    && !(self.0.wifi_enabled.load(Ordering::SeqCst) && state.saved_devices.iter().any(|device| &device.id == id)) {
                     return Err("设备列表已变化，请刷新后重新选择。".into());
                 }
             }
@@ -331,19 +400,79 @@ impl Engine {
     }
 
     pub async fn save_settings(&self, settings: Settings) -> Result<Snapshot, String> {
-        let guard = self.begin_operation().await?;
+        settings.validate()?;
+        let _settings = self.0.settings_update.lock().await;
+        self.apply_settings(settings, false).await
+    }
+
+    /// Disabling wireless is a stop action: it must also cancel a wireless
+    /// startup/recovery currently awaiting ADB, rather than fail as "busy".
+    pub async fn set_wifi_enabled(&self, enabled: bool) -> Result<Snapshot, String> {
+        let _settings = self.0.settings_update.lock().await;
+        let mut settings = self.0.state.read().await.settings.clone();
+        settings.wifi_enabled = enabled;
+        self.apply_settings(settings, true).await
+    }
+
+    async fn apply_settings(&self, settings: Settings, wifi_only: bool) -> Result<Snapshot, String> {
+        if self.0.shutting_down.load(Ordering::SeqCst) { return Err("程序正在退出，请稍候。".into()); }
+        let changed = settings.wifi_enabled != self.0.wifi_enabled.load(Ordering::SeqCst);
+        if changed {
+            // Share the final spawn gate. A spawn either observes disabled or
+            // registers a child that the following stop can immediately see.
+            let active = self.0.active.lock().await;
+            self.0.wifi_enabled.store(settings.wifi_enabled, Ordering::SeqCst);
+            self.0.wifi_epoch.fetch_add(1, Ordering::SeqCst);
+            if !settings.wifi_enabled {
+                if let Some(current) = active.as_ref().filter(|current| current.session.transport == TransportKind::Wifi) {
+                    current.user_stop.store(true, Ordering::SeqCst);
+                    self.0.stop_epoch.fetch_add(1, Ordering::SeqCst);
+                }
+            }
+            drop(active);
+            self.0.state.write().await.settings.wifi_enabled = settings.wifi_enabled;
+        }
+        let immediate_result = if changed && !settings.wifi_enabled { self.stop_wifi_inner().await } else { Ok(()) };
+        let guard = if changed {
+            let lock = self.0.operation.clone().lock_owned().await;
+            self.0.busy.store(true, Ordering::SeqCst);
+            OperationGuard { _guard: lock, busy: self.0.busy.clone() }
+        } else { self.begin_operation().await? };
         let result = async {
-            settings.validate()?;
-            self.0.state.write().await.settings = settings;
-            self.persist().await
+            if self.0.shutting_down.load(Ordering::SeqCst) { return Err("程序正在退出，请稍候。".into()); }
+            if !settings.wifi_enabled { self.stop_wifi_inner().await?; }
+            {
+                let mut state = self.0.state.write().await;
+                // A toggle queued behind USB startup must preserve the device
+                // selection/preferences that startup may have just committed.
+                if wifi_only { state.settings.wifi_enabled = settings.wifi_enabled; }
+                else { state.settings = settings; }
+            }
+            self.persist().await?;
+            immediate_result?;
+            if changed {
+                let enabled = self.0.wifi_enabled.load(Ordering::SeqCst);
+                self.log(LogLevel::Info, if enabled { "已开启 Wi-Fi 设备。" } else { "已关闭 Wi-Fi，仅显示 USB 设备。" }.into()).await;
+                if let Err(error) = self.refresh_inner().await {
+                    self.log(LogLevel::Warning, format!("Wi-Fi 开关已保存，设备列表暂未刷新：{error}")).await;
+                }
+            }
+            Ok(())
         }.await;
         self.finish(result, guard).await
     }
 
+    fn require_wifi_enabled(&self) -> Result<(), String> {
+        if self.0.wifi_enabled.load(Ordering::SeqCst) { Ok(()) }
+        else { Err("Wi-Fi 已关闭，请先打开主界面的 Wi-Fi 开关。".into()) }
+    }
+
     pub async fn start_mirror(&self, device_id: String, transport: TransportPreference) -> Result<Snapshot, String> {
         let guard = self.begin_operation().await?;
+        let _notification_start = NotificationStartGuard::new(&self.0.notification_starting);
         let request_epoch = self.0.stop_epoch.load(Ordering::SeqCst);
         let result = async {
+            if transport == TransportPreference::Wifi { self.require_wifi_enabled()?; }
             if self.0.active.lock().await.is_some() {
                 return Err("已有设备正在投屏，请先停止当前投屏。".into());
             }
@@ -361,6 +490,48 @@ impl Engine {
                 return Err("本次启动已取消。".into());
             }
             self.launch_session(&device, &selected, false, request_epoch).await?;
+            self.wait_for_startup().await
+        }.await;
+        self.finish(result, guard).await
+    }
+
+    /// A toast action is capability-bound to one observed USB attachment. It
+    /// never falls back to the user's preferred Wi-Fi transport or switches an
+    /// existing Starting/Running/Reconnecting session.
+    pub async fn start_from_usb_notification(&self, token: String) -> Result<Snapshot, String> {
+        let guard = match self.begin_operation().await {
+            Ok(guard) => guard,
+            Err(error) => {
+                self.dismiss_usb_notification(&token);
+                if !self.0.shutting_down.load(Ordering::SeqCst) {
+                    let mut state = self.0.state.write().await;
+                    state.last_error = Some(error.clone());
+                    push_log(&mut state, LogLevel::Error, error.clone());
+                }
+                return Err(error);
+            }
+        };
+        let _notification_start = NotificationStartGuard::new(&self.0.notification_starting);
+        let request_epoch = self.0.stop_epoch.load(Ordering::SeqCst);
+        let result = async {
+            if self.0.active.lock().await.is_some() || self.0.state.read().await.session.is_some() {
+                self.clear_usb_notifications();
+                return Err("已有设备正在投屏，本次通知不会切换当前投屏。".into());
+            }
+            let notice = self.0.usb_notifications.lock().unwrap_or_else(|error| error.into_inner()).claim(&token);
+            let _ = self.0.usb_notification_events.send(UsbNotificationEvent::Remove { token: token.clone() });
+            let notice = notice.ok_or_else(|| "这条连接通知已失效，请在主界面重新选择当前 USB 设备。".to_string())?;
+            self.refresh_inner().await?;
+            if !self.0.usb_notifications.lock().unwrap_or_else(|error| error.into_inner()).attachment_is_current(&notice) {
+                return Err("通知对应的 USB 连接已发生变化，本次启动已取消。请重新选择当前设备。".into());
+            }
+            let device = self.find_device(&notice.device_id).await?;
+            let transport = device.transports.iter().find(|transport| transport.kind == TransportKind::Usb
+                && transport.state == "device" && transport.serial == notice.usb_serial).cloned()
+                .ok_or_else(|| "通知对应的 USB 设备已离线或尚未授权，请重新连接。".to_string())?;
+            self.0.state.write().await.settings.last_device_id = Some(device.id.clone());
+            self.persist().await?;
+            self.launch_session_checked(&device, &transport, false, request_epoch, Some(&notice)).await?;
             self.wait_for_startup().await
         }.await;
         self.finish(result, guard).await
@@ -386,6 +557,7 @@ impl Engine {
     pub async fn configure_wireless(&self, device_id: String) -> Result<Snapshot, String> {
         let guard = self.begin_operation().await?;
         let result = async {
+            self.require_wifi_enabled()?;
             if self.0.active.lock().await.is_some() {
                 return Err("配置无线会重启设备的调试连接。请先停止投屏，再配置无线。".into());
             }
@@ -396,6 +568,7 @@ impl Engine {
                 .ok_or_else(|| "设备尚未连接 Wi-Fi。请让手机与电脑接入同一局域网后重试。".to_string())?;
             let address = format!("{wifi_ip}:5555");
             self.log(LogLevel::Info, format!("正在为 {} 配置无线连接…", device.name)).await;
+            self.require_wifi_enabled()?;
             self.adb(&["-s", &usb.serial, "tcpip", "5555"], ADB_TIMEOUT).await?;
             sleep(Duration::from_millis(1100)).await;
             self.connect_verified(&address).await?;
@@ -413,6 +586,7 @@ impl Engine {
     pub async fn connect_wireless(&self, address: String) -> Result<Snapshot, String> {
         let guard = self.begin_operation().await?;
         let result = async {
+            self.require_wifi_enabled()?;
             let address = validate_endpoint(&address)?;
             self.connect_and_save(&address).await?;
             self.refresh_inner().await?;
@@ -425,6 +599,7 @@ impl Engine {
     pub async fn pair_wireless(&self, pairing_address: String, code: String, connect_address: Option<String>) -> Result<Snapshot, String> {
         let guard = self.begin_operation().await?;
         let result = async {
+            self.require_wifi_enabled()?;
             let pairing_address = validate_endpoint(&pairing_address)?;
             let code = code.trim();
             if code.len() != 6 || !code.bytes().all(|value| value.is_ascii_digit()) {
@@ -434,6 +609,7 @@ impl Engine {
             let connect_address = connect_address.filter(|value| !value.trim().is_empty())
                 .map(|value| validate_endpoint(&value)).transpose()?;
             let mut command = self.command("adb.exe");
+            self.require_wifi_enabled()?;
             command.args(["pair", &pairing_address]).stdin(Stdio::piped())
                 .stdout(Stdio::piped()).stderr(Stdio::piped());
             let mut child = command.spawn().map_err(|error| format!("无法启动配对：{error}"))?;
@@ -465,6 +641,7 @@ impl Engine {
 
     pub async fn shutdown(&self) {
         self.0.shutting_down.store(true, Ordering::SeqCst);
+        self.clear_usb_notifications();
         self.0.stop_epoch.fetch_add(1, Ordering::SeqCst);
         if let Some(active) = self.0.active.lock().await.as_ref() {
             active.user_stop.store(true, Ordering::SeqCst);
@@ -504,11 +681,15 @@ impl Engine {
 
     async fn refresh_inner(&self) -> Result<(), String> {
         let _gate = self.0.refresh_gate.lock().await;
+        let background = self.0.notification_background.load(Ordering::SeqCst);
+        let window_epoch = self.0.notification_window_epoch.load(Ordering::SeqCst);
         let text = self.adb(&["devices", "-l"], ADB_TIMEOUT).await?;
-        let entries = parse_adb_devices(&text);
-        let saved = self.0.state.read().await.saved_devices.clone();
+        let entries = parse_adb_devices(&text).into_iter().filter(|entry|
+            entry.kind == TransportKind::Usb || self.0.wifi_enabled.load(Ordering::SeqCst)).collect::<Vec<_>>();
+        let saved = if self.0.wifi_enabled.load(Ordering::SeqCst) { self.0.state.read().await.saved_devices.clone() } else { vec![] };
         let mut collected = Vec::new();
         for entry in &entries {
+            if entry.kind == TransportKind::Wifi && !self.0.wifi_enabled.load(Ordering::SeqCst) { continue; }
             let metadata = if entry.state == "device" {
                 match self.metadata(&entry.serial, &entry.model, entry.kind, false).await {
                     Ok(value) => Some(value),
@@ -521,15 +702,39 @@ impl Engine {
             collected.push((entry.clone(), metadata));
         }
         let devices = group_devices(collected, &saved);
-        let mut state = self.0.state.write().await;
-        state.devices = devices;
-        if state.settings.last_device_id.is_none() && state.devices.len() == 1 {
-            state.settings.last_device_id = state.devices.first().map(|device| device.id.clone());
-        }
+        let usb = entries.iter().filter(|entry| entry.kind == TransportKind::Usb).filter_map(|entry| {
+            let device = devices.iter().find(|device| device.transports.iter().any(|transport|
+                transport.kind == TransportKind::Usb && transport.serial == entry.serial))?;
+            Some(UsbPresence { serial: entry.serial.clone(), device_id: device.id.clone(), device_name: device.name.clone(),
+                transport_id: entry.transport_id.clone(), authorized: entry.state == "device" })
+        }).collect();
+        let session_present = {
+            let mut state = self.0.state.write().await;
+            state.devices = devices;
+            if state.settings.last_device_id.is_none() && state.devices.len() == 1 {
+                state.settings.last_device_id = state.devices.first().map(|device| device.id.clone());
+            }
+            state.session.is_some()
+        };
+        let allowed = background && self.0.notification_background.load(Ordering::SeqCst)
+            && window_epoch == self.0.notification_window_epoch.load(Ordering::SeqCst)
+            && !session_present && !self.0.notification_starting.load(Ordering::SeqCst)
+            && !self.0.shutting_down.load(Ordering::SeqCst);
+        let (removed, notices) = {
+            let mut policy = self.0.usb_notifications.lock().unwrap_or_else(|error| error.into_inner());
+            let old = policy.pending_tokens();
+            if session_present { policy.revoke_all(); }
+            let notices = policy.observe(usb, allowed, new_usb_notification_token);
+            let removed = old.into_iter().filter(|token| !policy.is_current(token)).collect::<Vec<_>>();
+            (removed, notices)
+        };
+        for token in removed { let _ = self.0.usb_notification_events.send(UsbNotificationEvent::Remove { token }); }
+        for notice in notices { let _ = self.0.usb_notification_events.send(UsbNotificationEvent::Show(notice)); }
         Ok(())
     }
 
     async fn metadata(&self, serial: &str, fallback_model: &str, kind: TransportKind, force: bool) -> Result<Metadata, String> {
+        if kind == TransportKind::Wifi { self.require_wifi_enabled()?; }
         if !force {
             if let Some(cached) = self.0.cache.lock().await.get(serial) {
                 if cached.fetched.elapsed() < Duration::from_secs(30) { return Ok(cached.metadata.clone()); }
@@ -568,17 +773,20 @@ impl Engine {
     }
 
     async fn find_device(&self, id: &str) -> Result<Device, String> {
-        self.0.state.read().await.devices.iter().find(|device| device.id == id).cloned()
+        visible_devices(&self.0.state.read().await.devices, self.0.wifi_enabled.load(Ordering::SeqCst)).into_iter().find(|device| device.id == id)
             .ok_or_else(|| "所选设备不在线。请检查连接并刷新设备列表。".into())
     }
 
     async fn connect_verified(&self, address: &str) -> Result<(), String> {
+        self.require_wifi_enabled()?;
         let address = validate_endpoint(address)?;
+        self.require_wifi_enabled()?;
         let response = self.adb(&["connect", &address], CONNECT_TIMEOUT).await?;
         let lower = response.to_ascii_lowercase();
         if lower.contains("failed") || lower.contains("cannot") || lower.contains("unable") {
             return Err(translate_error(&response));
         }
+        self.require_wifi_enabled()?;
         let model = self.adb(&["-s", &address, "shell", "getprop", "ro.product.model"], ADB_TIMEOUT).await?;
         if model.trim().is_empty() { return Err("无线连接未通过设备响应验证，请确认地址与授权状态。".into()); }
         Ok(())
@@ -591,6 +799,7 @@ impl Engine {
     }
 
     async fn save_address(&self, id: &str, name: &str, address: &str) -> Result<(), String> {
+        self.require_wifi_enabled()?;
         {
             let mut state = self.0.state.write().await;
             // An address can be reassigned by DHCP; its current verified identity wins.
@@ -607,6 +816,7 @@ impl Engine {
     }
 
     async fn discover_connect_address(&self, pairing_address: &str) -> Result<Option<String>, String> {
+        self.require_wifi_enabled()?;
         let output = match self.adb(&["mdns", "services"], ADB_TIMEOUT).await {
             Ok(output) => output,
             Err(_) => return Ok(None),
@@ -644,6 +854,11 @@ impl Engine {
     }
 
     async fn launch_session(&self, device: &Device, transport: &Transport, recovered: bool, expected_epoch: u64) -> Result<(), String> {
+        self.launch_session_checked(device, transport, recovered, expected_epoch, None).await
+    }
+
+    async fn launch_session_checked(&self, device: &Device, transport: &Transport, recovered: bool, expected_epoch: u64, usb_notice: Option<&UsbNotification>) -> Result<(), String> {
+        if transport.kind == TransportKind::Wifi { self.require_wifi_enabled()?; }
         // A cached IP is only a list/display hint. DHCP may have assigned it to a
         // different authorized phone since the last refresh, so every wireless
         // launch must prove physical identity again without a cache fallback.
@@ -662,7 +877,7 @@ impl Engine {
         // Remember a freshly verified same-device transport for this USB session
         // without requiring the user to configure or save it a second time.
         let mut recovery_serial = None;
-        if transport.kind == TransportKind::Usb {
+        if transport.kind == TransportKind::Usb && self.0.wifi_enabled.load(Ordering::SeqCst) {
             for wireless in device.transports.iter().filter(|candidate| candidate.kind == TransportKind::Wifi && candidate.state == "device") {
                 if let Ok(identity) = self.metadata(&wireless.serial, &device.model, TransportKind::Wifi, true).await {
                     if verify_device_identity(&device.id, &identity).is_ok() {
@@ -679,15 +894,28 @@ impl Engine {
         if settings.audio && !audio_supported {
             self.log(LogLevel::Warning, "该设备不支持声音转发（需要 Android 11 或以上），本次已自动关闭声音。".into()).await;
         }
+        if let Some(notice) = usb_notice {
+            // scrcpy has no --transport-id flag. Recheck the exact authorized
+            // ADB transport immediately before spawn instead of trusting the
+            // earlier list or metadata cache; never fall back to Wi-Fi.
+            let current = self.adb(&["devices", "-l"], ADB_TIMEOUT).await?;
+            if !parse_adb_devices(&current).iter().any(|entry| entry.kind == TransportKind::Usb
+                && entry.state == "device" && entry.serial == notice.usb_serial
+                && entry.transport_id.as_deref() == Some(notice.adb_transport_id.as_str())) {
+                return Err("通知对应的 USB 连接已发生变化，本次启动已取消。请重新选择当前设备。".into());
+            }
+        }
         // Stop may have arrived while metadata/identity checks were awaiting ADB.
         // Hold the session gate from this final check through registration, so a
         // simultaneous stop either cancels startup or immediately sees its child.
         let mut active = self.0.active.lock().await;
+        if transport.kind == TransportKind::Wifi { self.require_wifi_enabled()?; }
         if self.0.stop_epoch.load(Ordering::SeqCst) != expected_epoch
             || self.0.shutting_down.load(Ordering::SeqCst) {
             return Err("本次启动已取消。".into());
         }
         if active.is_some() { return Err("已有设备正在投屏，请先停止当前投屏。".into()); }
+        self.clear_usb_notifications();
         let mut child = command.stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped())
             .spawn().map_err(|error| format!("无法启动投屏组件：{error}"))?;
         let stdout = child.stdout.take();
@@ -787,6 +1015,26 @@ impl Engine {
         Ok(())
     }
 
+    /// This never sends adb disconnect or changes the phone's Wi-Fi. USB and
+    /// processes owned by other programs remain untouched.
+    async fn stop_wifi_inner(&self) -> Result<(), String> {
+        let active = {
+            let mut active = self.0.active.lock().await;
+            if active.as_ref().is_none_or(|current| current.session.transport != TransportKind::Wifi) { return Ok(()); }
+            let current = active.take().unwrap();
+            self.0.state.write().await.session = None;
+            current
+        };
+        active.user_stop.store(true, Ordering::SeqCst);
+        let mut child = active.child.lock().await;
+        if child.try_wait().map_err(|error| format!("无法读取无线投屏进程状态：{error}"))?.is_none() {
+            child.kill().await.map_err(|error| format!("停止无线投屏失败：{error}"))?;
+        }
+        child.wait().await.map_err(|error| format!("等待无线投屏结束失败：{error}"))?;
+        self.log(LogLevel::Info, "无线投屏已停止。".into()).await;
+        Ok(())
+    }
+
     async fn poll_session(&self) {
         let pending = {
             let active = self.0.active.lock().await;
@@ -828,6 +1076,8 @@ impl Engine {
             }
             return;
         }
+        if !self.0.wifi_enabled.load(Ordering::SeqCst) { return; }
+        let wifi_epoch = self.0.wifi_epoch.load(Ordering::SeqCst);
         let saved_address = self.0.state.read().await.saved_devices.iter()
             .find(|saved| saved.id == ended.session.device_id).map(|saved| saved.address.clone());
         let Some(address) = ended.recovery_serial.clone().or(saved_address) else {
@@ -839,7 +1089,9 @@ impl Engine {
         let lock = self.0.operation.clone().lock_owned().await;
         if ended.user_stop.load(Ordering::SeqCst)
             || self.0.shutting_down.load(Ordering::SeqCst)
-            || self.0.stop_epoch.load(Ordering::SeqCst) != ended.stop_epoch { return; }
+            || self.0.stop_epoch.load(Ordering::SeqCst) != ended.stop_epoch
+            || !self.0.wifi_enabled.load(Ordering::SeqCst)
+            || self.0.wifi_epoch.load(Ordering::SeqCst) != wifi_epoch { return; }
         if self.0.active.lock().await.is_some() { return; }
         self.0.busy.store(true, Ordering::SeqCst);
         let _guard = OperationGuard { _guard: lock, busy: self.0.busy.clone() };
@@ -859,11 +1111,17 @@ impl Engine {
             let transport = device.transports.iter().find(|transport| transport.kind == TransportKind::Wifi && transport.serial == address && transport.state == "device")
                 .ok_or_else(|| "无线设备仍未就绪，请检查网络后手动重试。".to_string())?.clone();
             if self.0.stop_epoch.load(Ordering::SeqCst) != ended.stop_epoch
-                || self.0.shutting_down.load(Ordering::SeqCst) { return Ok(false); }
+                || self.0.shutting_down.load(Ordering::SeqCst)
+                || !self.0.wifi_enabled.load(Ordering::SeqCst)
+                || self.0.wifi_epoch.load(Ordering::SeqCst) != wifi_epoch { return Ok(false); }
             self.launch_session(&device, &transport, true, ended.stop_epoch).await?;
             Ok::<bool, String>(true)
         }.await;
         if let Err(error) = recovery {
+            if !self.0.wifi_enabled.load(Ordering::SeqCst)
+                || self.0.wifi_epoch.load(Ordering::SeqCst) != wifi_epoch
+                || self.0.stop_epoch.load(Ordering::SeqCst) != ended.stop_epoch
+                || self.0.shutting_down.load(Ordering::SeqCst) { return; }
             let message = format!("无线恢复失败：{error} 请检查网络后点击「开始投屏」重试。");
             let mut state = self.0.state.write().await;
             state.last_error = Some(message.clone());
@@ -878,6 +1136,16 @@ fn parse_persisted(bytes: &[u8]) -> Result<Persisted, String> {
     Ok(value)
 }
 
+fn visible_devices(devices: &[Device], wifi_enabled: bool) -> Vec<Device> {
+    if wifi_enabled { return devices.to_vec(); }
+    devices.iter().filter_map(|device| {
+        let mut device = device.clone();
+        device.transports.retain(|transport| transport.kind == TransportKind::Usb);
+        device.wifi_address = None;
+        if device.transports.is_empty() { None } else { Some(device) }
+    }).collect()
+}
+
 fn validate_navigation_request(token: u64, active_token: u64, phase: SessionPhase, stopping: bool) -> Result<(), String> {
     if token != active_token { return Err("投屏会话已切换，请在当前投屏窗口重新操作。".into()); }
     if stopping { return Err("投屏正在停止，本次导航已取消。".into()); }
@@ -886,6 +1154,9 @@ fn validate_navigation_request(token: u64, active_token: u64, phase: SessionPhas
 }
 
 fn build_scrcpy_args(device: &Device, transport: &Transport, settings: &Settings) -> Result<Vec<String>, String> {
+    if transport.kind == TransportKind::Wifi && !settings.wifi_enabled {
+        return Err("Wi-Fi 已关闭，请先打开主界面的 Wi-Fi 开关。".into());
+    }
     settings.validate()?;
     // Keep the Android display at its original size. An absent max-fps option
     // lets scrcpy use the device's maximum instead of imposing a guessed cap.
@@ -918,8 +1189,32 @@ fn parse_adb_devices(text: &str) -> Vec<AdbDevice> {
         } else if serial.contains(':') || serial.contains("._adb-tls-connect._tcp") {
             TransportKind::Wifi
         } else { TransportKind::Usb };
-        Some(AdbDevice { serial: serial.to_string(), state: state.to_string(), model, kind })
+        let transport_id = metadata.iter().find_map(|field| field.strip_prefix("transport_id:")).filter(|id|
+            !id.is_empty() && id.chars().all(|character| character.is_ascii_digit())).map(str::to_string);
+        Some(AdbDevice { serial: serial.to_string(), state: state.to_string(), model, kind, transport_id })
     }).collect()
+}
+
+/// Tokens live only in this process and are never persisted or accepted as a
+/// device identifier. If OS entropy is unavailable, discovery still succeeds
+/// and that one reminder is simply skipped.
+fn new_usb_notification_token() -> Option<String> {
+    let mut bytes = [0u8; 16];
+    #[cfg(windows)]
+    {
+        #[link(name = "bcrypt")]
+        extern "system" {
+            fn BCryptGenRandom(algorithm: *mut std::ffi::c_void, buffer: *mut u8, length: u32, flags: u32) -> i32;
+        }
+        // BCRYPT_USE_SYSTEM_PREFERRED_RNG accepts a null algorithm handle.
+        if unsafe { BCryptGenRandom(std::ptr::null_mut(), bytes.as_mut_ptr(), bytes.len() as u32, 2) } < 0 { return None; }
+    }
+    #[cfg(not(windows))]
+    {
+        use std::io::Read;
+        std::fs::File::open("/dev/urandom").ok()?.read_exact(&mut bytes).ok()?;
+    }
+    Some(bytes.iter().map(|byte| format!("{byte:02x}")).collect())
 }
 
 fn fallback_device_id(serial: &str, kind: TransportKind) -> String {
@@ -1115,7 +1410,7 @@ mod tests {
     use super::*;
 
     fn adb(serial: &str, kind: TransportKind, model: &str) -> AdbDevice {
-        AdbDevice { serial: serial.into(), state: "device".into(), model: model.into(), kind }
+        AdbDevice { serial: serial.into(), state: "device".into(), model: model.into(), kind, transport_id: Some("1".into()) }
     }
     fn metadata(id: &str, model: &str) -> Metadata {
         Metadata { id: format!("android:{id}"), hardware_identity_verified: true, model: model.into(), android_version: Some("9".into()), api_level: Some(28) }
@@ -1180,6 +1475,7 @@ mod tests {
             "savedDevices": [{"id":"android:A","name":"My Android","address":"192.168.1.2:5555"}]
         }"#).unwrap();
         assert_eq!(persisted.settings.max_fps, None);
+        assert!(persisted.settings.wifi_enabled);
         assert!(!persisted.settings.audio);
         assert!(persisted.settings.always_on_top);
         assert_eq!(persisted.settings.preferred_transport, TransportPreference::Wifi);
@@ -1188,6 +1484,32 @@ mod tests {
         let migrated = serde_json::to_value(&persisted).unwrap();
         assert!(migrated["settings"].get("preset").is_none());
         assert!(migrated["settings"]["maxFps"].is_null());
+    }
+
+    #[test]
+    fn disabled_wifi_settings_roundtrip_and_block_wireless_arguments_only() {
+        let mut settings = Settings::default(); settings.wifi_enabled = false;
+        let encoded = serde_json::to_vec(&Persisted { settings: settings.clone(), saved_devices: vec![] }).unwrap();
+        assert!(!parse_persisted(&encoded).unwrap().settings.wifi_enabled);
+        let (device, usb) = launch_fixture();
+        assert!(build_scrcpy_args(&device, &usb, &settings).is_ok());
+        let wifi = Transport { serial: "192.0.2.10:5555".into(), kind: TransportKind::Wifi, state: "device".into() };
+        assert!(build_scrcpy_args(&device, &wifi, &settings).unwrap_err().contains("Wi-Fi 已关闭"));
+    }
+
+    #[test]
+    fn disabled_wifi_visibility_keeps_usb_transports_without_mutating_remembered_devices() {
+        let devices = group_devices(vec![
+            (adb("USB-A", TransportKind::Usb, "A"), Some(metadata("A", "A"))),
+            (adb("192.0.2.10:5555", TransportKind::Wifi, "A"), Some(metadata("A", "A"))),
+            (adb("192.0.2.11:5555", TransportKind::Wifi, "B"), Some(metadata("B", "B"))),
+        ], &[]);
+        let visible = visible_devices(&devices, false);
+        assert_eq!(visible.len(), 1); assert_eq!(visible[0].id, "android:A");
+        assert_eq!(visible[0].transports.len(), 1); assert_eq!(visible[0].transports[0].kind, TransportKind::Usb);
+        assert!(visible[0].wifi_address.is_none());
+        assert_eq!(visible_devices(&devices, true).len(), 2);
+        assert_eq!(devices[0].transports.len(), 2);
     }
 
     #[test]

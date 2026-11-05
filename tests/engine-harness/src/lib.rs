@@ -4,3 +4,5 @@ pub mod models;
 pub mod scrcpy_input;
 #[path = "../../../src-tauri/src/engine.rs"]
 pub mod engine;
+#[path = "../../../src-tauri/src/usb_notifications.rs"]
+pub mod usb_notifications;

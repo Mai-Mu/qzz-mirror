@@ -1,5 +1,6 @@
 export type TransportPreference = 'auto' | 'usb' | 'wifi';
 export interface Settings {
+  wifiEnabled: boolean;
   maxFps: number | null;
   audio: boolean;
   alwaysOnTop: boolean;
