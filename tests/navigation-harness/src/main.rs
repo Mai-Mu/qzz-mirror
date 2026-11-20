@@ -5,7 +5,7 @@
 #[path = "../../../src-tauri/src/navigation_bar.rs"]
 mod navigation_bar;
 
-use navigation_bar::{NavigationBar, NavigationButton, Target};
+use navigation_bar::{Completion, NavigationBar, NavigationButton, Target};
 use std::{
     ffi::c_void,
     fs,
@@ -279,6 +279,12 @@ fn bars() -> Vec<HWND> {
 
 fn bar_for(owner: HWND) -> Option<HWND> { bars().into_iter().find(|bar| unsafe { GetWindow(*bar, GW_OWNER) == owner }) }
 fn bar_visible(owner: HWND) -> bool { bar_for(owner).is_some_and(|bar| unsafe { IsWindowVisible(bar) != 0 }) }
+fn buttons_enabled(bar: HWND, enabled: bool) -> bool {
+    BUTTON_IDS.iter().all(|id| unsafe {
+        let button = GetDlgItem(bar, *id);
+        !button.is_null() && (IsWindowEnabled(button) != 0) == enabled
+    })
+}
 
 fn above_in_z_order(upper: HWND, lower: HWND) -> bool {
     if upper.is_null() || lower.is_null() || upper == lower { return false; }
@@ -482,9 +488,16 @@ fn smoke(report: &mut Report, output: &Path) -> Result<(), String> {
     unsafe { SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2); }
     let calls = Arc::new(Mutex::new(Vec::<(u64, u8)>::new()));
     let recorded = calls.clone();
+    let pending = Arc::new(Mutex::new(None::<Completion>));
+    let deferred = pending.clone();
     let bar = NavigationBar::start(move |token, button, completion| {
         let key = match button { NavigationButton::Recents => 0, NavigationButton::Back => 1, NavigationButton::Home => 2 };
-        recorded.lock().unwrap().push((token, key)); completion(Ok(()));
+        recorded.lock().unwrap().push((token, key));
+        if token == 202 && button == NavigationButton::Home {
+            *deferred.lock().unwrap() = Some(completion);
+        } else {
+            completion(Ok(()));
+        }
     })?;
     let controller = bar.controller();
     let mut owner = Helper::start()?;
@@ -492,7 +505,7 @@ fn smoke(report: &mut Report, output: &Path) -> Result<(), String> {
     owner.command("cover")?;
     require(above_in_z_order(owner.cover, owner.window), "own cover did not start above own mock owner")?;
     require(unsafe { GetForegroundWindow() } == foreground_before_cover, "creating own cover changed foreground")?;
-    controller.set_target(Some(Target { process_id: owner.pid(), token: 101, running: true }));
+    controller.set_targets(vec![Target { process_id: owner.pid(), token: 101, running: true }]);
     wait_for("own mock attachment", || bar_visible(owner.window))?;
     wait_for("new popup stays below own covering window", || bar_for(owner.window).is_some_and(|navigation|
         above_in_z_order(owner.cover, navigation) && above_in_z_order(navigation, owner.window)))?;
@@ -564,31 +577,56 @@ fn smoke(report: &mut Report, output: &Path) -> Result<(), String> {
     wait_for("own owner restored", || unsafe { IsIconic(owner.window) == 0 } && bar_visible(owner.window))?;
     report.passed("nonactivating mock minimize/restore visibility");
 
-    controller.set_target(Some(Target { process_id: owner.pid(), token: 101, running: false }));
-    wait_for("non-running session disables buttons", || bar_for(owner.window).is_some_and(|hwnd| BUTTON_IDS.iter().all(|id| unsafe { IsWindowEnabled(GetDlgItem(hwnd, *id)) == 0 })))?;
+    controller.set_targets(vec![Target { process_id: owner.pid(), token: 101, running: false }]);
+    wait_for("non-running session disables buttons", || {
+        bar_for(owner.window).is_some_and(|hwnd| buttons_enabled(hwnd, false))
+    })?;
     let count = calls.lock().unwrap().len();
     let navigation = bar_for(owner.window).ok_or("non-running bar missing")?;
     for id in BUTTON_IDS { click(navigation, id)?; }
     thread::sleep(Duration::from_millis(150));
     require(calls.lock().unwrap().len() == count, "disabled navigation dispatched an action")?;
-    controller.set_target(Some(Target { process_id: owner.pid(), token: 202, running: true }));
-    wait_for("new token enables buttons", || bar_for(owner.window).is_some_and(|hwnd| BUTTON_IDS.iter().all(|id| unsafe { IsWindowEnabled(GetDlgItem(hwnd, *id)) != 0 })))?;
+    let first = Target { process_id: owner.pid(), token: 202, running: true };
+    controller.set_targets(vec![first]);
+    wait_for("new token enables buttons", || {
+        bar_for(owner.window).is_some_and(|hwnd| buttons_enabled(hwnd, true))
+    })?;
     click(bar_for(owner.window).ok_or("new token bar missing")?, 101)?;
     wait_for("new token callback", || calls.lock().unwrap().len() == count + 1)?;
     require(calls.lock().unwrap().last().copied() == Some((202, 1)), "token replacement dispatched stale token")?;
     report.passed("running=false rejects clicks; replacement token is used");
 
     let mut replacement = Helper::start()?;
-    controller.set_target(Some(Target { process_id: replacement.pid(), token: 303, running: true }));
-    wait_for("new process replaces old owner", || bar_visible(replacement.window) && bar_for(owner.window).is_none() && bars().len() == 1)?;
-    click(bar_for(replacement.window).ok_or("replacement bar missing")?, 102)?;
+    let second = Target { process_id: replacement.pid(), token: 303, running: true };
+    controller.set_targets(vec![first, second]);
+    wait_for("two active owners receive their own bars", || bars().len() == 2
+        && geometry_matches(owner.window) && geometry_matches(replacement.window))?;
+    let first_bar = bar_for(owner.window).ok_or("first bar missing")?;
+    let second_bar = bar_for(replacement.window).ok_or("second bar missing")?;
+    require(first_bar != second_bar, "two owners were assigned the same bar")?;
+    report.passed("two active owners have separate bars with matching geometry");
+
+    click(first_bar, 102)?;
+    wait_for("request disables only its own bar", || pending.lock().unwrap().is_some()
+        && buttons_enabled(first_bar, false) && buttons_enabled(second_bar, true))?;
+    click(second_bar, 101)?;
+    wait_for("second owner accepts requests while first is busy", || calls.lock().unwrap().last().copied() == Some((303, 1)))?;
+    require(calls.lock().unwrap().ends_with(&[(202, 2), (303, 1)]), "two bars crossed navigation tokens")?;
+    report.passed("busy feedback and callbacks remain independent across both bars");
+
+    controller.set_targets(vec![second]);
+    wait_for("removing one owner leaves the other bar attached", || bar_visible(replacement.window)
+        && bar_for(replacement.window) == Some(second_bar) && bar_for(owner.window).is_none() && bars().len() == 1)?;
+    let complete = pending.lock().unwrap().take().ok_or("first owner did not retain pending request")?;
+    complete(Err("first owner ended".into()));
+    click(second_bar, 102)?;
     wait_for("replacement callback", || calls.lock().unwrap().last().copied() == Some((303, 2)))?;
-    report.passed("new PID/session gets one bar; old owner is detached");
+    report.passed("removed owner and stale completion leave the other bar attached and usable");
 
     replacement.command("destroy")?;
     wait_for("destroyed mock owner removes popup", || bars().is_empty())?;
     report.passed("owner destruction removes the owned navigation popup");
-    controller.set_target(None); drop(bar);
+    controller.set_targets(Vec::new()); drop(bar);
     wait_for("navigation worker shutdown", || controller.is_stopped())?;
     require(bars().is_empty(), "navigation popup leaked after shutdown")?;
     report.passed("target clearing and Drop stop the worker without ghost windows");

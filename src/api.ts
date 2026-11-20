@@ -3,8 +3,8 @@ import type { Settings, Snapshot, TransportPreference } from './types';
 
 export const isTauri = detectTauri();
 const browserSnapshot: Snapshot = {
-  devices: [], savedDevices: [], session: null, logs: [],
-  engineVersion: 'scrcpy', busy: false, lastError: null,
+  devices: [], savedDevices: [], sessions: [], logs: [],
+  engineVersion: 'scrcpy', busy: false, lastError: null, lastErrorDeviceId: null,
   settings: {
     wifiEnabled: true, maxFps: null, audio: true, alwaysOnTop: false,
     preferredTransport: 'auto', lastDeviceId: null,
@@ -27,7 +27,7 @@ export const api = {
     : Promise.resolve(structuredClone(Object.assign(browserSnapshot, { settings: { ...browserSnapshot.settings, wifiEnabled: enabled, preferredTransport: !enabled && browserSnapshot.settings.preferredTransport === 'wifi' ? 'auto' : browserSnapshot.settings.preferredTransport } }))),
   selectDevice: (deviceId: string | null) => desktopOnly<Snapshot>('select_device', { deviceId }),
   startMirror: (deviceId: string, transport: TransportPreference) => desktopOnly<Snapshot>('start_mirror', { deviceId, transport }),
-  stopMirror: () => desktopOnly<Snapshot>('stop_mirror'),
+  stopMirror: (deviceId: string) => desktopOnly<Snapshot>('stop_mirror', { deviceId }),
   configureWireless: (deviceId: string) => desktopOnly<Snapshot>('configure_wireless', { deviceId }),
   connectWireless: (address: string) => desktopOnly<Snapshot>('connect_wireless', { address }),
   pairWireless: (address: string, code: string, connectAddress: string | null) => desktopOnly<Snapshot>('pair_wireless', { pairingAddress: address, code, connectAddress }),

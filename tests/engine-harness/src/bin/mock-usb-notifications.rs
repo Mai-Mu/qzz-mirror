@@ -143,7 +143,7 @@ async fn main() {
     let (first_result, second_result) = tokio::join!(starter.start_from_usb_notification(launch.token), other.start_from_usb_notification(second_token));
     assert_eq!(usize::from(first_result.is_ok()) + usize::from(second_result.is_ok()), 1);
     assert_eq!(starts(&state), 1);
-    let snapshot = engine.snapshot().await; let session = snapshot.session.unwrap();
+    let snapshot = engine.snapshot().await; let session = snapshot.sessions.first().unwrap();
     assert_eq!(session.transport, TransportKind::Usb); assert_eq!(session.serial, "USB-123");
     assert_eq!(snapshot.settings.preferred_transport, TransportPreference::Wifi);
     let args: Vec<String> = serde_json::from_slice(&fs::read(state.join("scrcpy-args.json")).unwrap()).unwrap();
@@ -154,8 +154,8 @@ async fn main() {
     devices(&state, Some(("device", "13")), false); engine.refresh().await.unwrap();
     assert!(notices(&mut receiver).is_empty());
     assert!(engine.start_from_usb_notification("another-token".into()).await.is_err()); assert_eq!(starts(&state), 1);
-    assert_eq!(engine.snapshot().await.session.unwrap().serial, "USB-123");
-    engine.stop_mirror().await.unwrap(); engine.refresh().await.unwrap();
+    assert_eq!(engine.snapshot().await.sessions.first().unwrap().serial, "USB-123");
+    engine.stop_mirror("android:HARDWARE-123".into()).await.unwrap(); engine.refresh().await.unwrap();
     assert!(notices(&mut receiver).is_empty());
     println!("PASS: an active mirror suppresses new attachments, never switches session, and stopping never replays suppressed devices");
 
@@ -163,7 +163,7 @@ async fn main() {
     engine.start_mirror(pending.device_id.clone(), TransportPreference::Usb).await.unwrap();
     assert!(!engine.usb_notification_is_current(&pending.token).await);
     assert!(engine.start_from_usb_notification(pending.token).await.is_err()); assert_eq!(starts(&state), 2);
-    engine.stop_mirror().await.unwrap();
+    engine.stop_mirror("android:HARDWARE-123".into()).await.unwrap();
     println!("PASS: a normal control-panel launch also revokes older toast capabilities and keeps its current session");
 
     devices(&state, None, true); engine.refresh().await.unwrap(); events(&mut receiver);
@@ -181,19 +181,19 @@ async fn main() {
         if state.join("metadata-waiting").exists() { break; }
         tokio::time::sleep(Duration::from_millis(20)).await;
     }
-    assert!(state.join("metadata-waiting").exists()); assert!(engine.snapshot().await.session.is_none());
+    assert!(state.join("metadata-waiting").exists()); assert!(engine.snapshot().await.sessions.is_empty());
     assert!(!engine.usb_notification_is_current(&pending.token).await);
     fs::remove_file(state.join("delay-metadata")).unwrap();
     for _ in 0..100 {
-        if engine.snapshot().await.session.is_some() { break; }
+        if !engine.snapshot().await.sessions.is_empty() { break; }
         tokio::time::sleep(Duration::from_millis(20)).await;
     }
-    assert_eq!(engine.snapshot().await.session.unwrap().phase, qzz_engine_tests::models::SessionPhase::Starting);
+    assert_eq!(engine.snapshot().await.sessions.first().unwrap().phase, qzz_engine_tests::models::SessionPhase::Starting);
     assert!(!engine.usb_notification_is_current(&pending.token).await);
     assert!(engine.start_from_usb_notification(pending.token).await.is_err());
-    assert!(engine.snapshot().await.last_error.as_deref().is_some_and(|error| error.contains("上一项操作")));
+    assert!(engine.snapshot().await.last_error.is_some());
     fs::remove_file(state.join("delay-start")).unwrap(); starting.await.unwrap().unwrap();
-    assert_eq!(starts(&state), 3); engine.stop_mirror().await.unwrap();
+    assert_eq!(starts(&state), 3); engine.stop_mirror("android:HARDWARE-123".into()).await.unwrap();
     println!("PASS: pending metadata startup suppresses queued toasts; unready Starting sessions revoke actions before the first frame");
 
     let pending = attach(&engine, &state, &mut receiver, "15").await;

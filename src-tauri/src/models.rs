@@ -140,9 +140,10 @@ pub struct Snapshot {
     pub devices: Vec<Device>,
     pub saved_devices: Vec<SavedDevice>,
     pub settings: Settings,
-    pub session: Option<Session>,
+    pub sessions: Vec<Session>,
     pub logs: Vec<LogEntry>,
     pub engine_version: String,
     pub busy: bool,
     pub last_error: Option<String>,
+    pub last_error_device_id: Option<String>,
 }

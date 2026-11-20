@@ -17,8 +17,8 @@ async fn marker(state: &Path, name: &str) {
 async fn wait_session(engine: &Engine, transport: Option<TransportKind>) {
     for _ in 0..160 {
         let snapshot = engine.snapshot().await;
-        if match transport { Some(kind) => snapshot.session.as_ref().is_some_and(|session|
-            session.transport == kind && session.phase == SessionPhase::Running), None => snapshot.session.is_none() } { return; }
+        if match transport { Some(kind) => snapshot.sessions.first().is_some_and(|session|
+            session.transport == kind && session.phase == SessionPhase::Running), None => snapshot.sessions.is_empty() } { return; }
         tokio::time::sleep(Duration::from_millis(25)).await;
     }
     panic!("unexpected session: {}", serde_json::to_string(&engine.snapshot().await).unwrap());
@@ -73,11 +73,11 @@ async fn main() {
     println!("PASS: all public wireless entry points reject disabled mode before wireless ADB or process side effects");
 
     engine.start_mirror(id.clone(), TransportPreference::Auto).await.unwrap();
-    let usb = engine.toolbar_session().await.unwrap();
-    assert_eq!(engine.snapshot().await.session.unwrap().transport, TransportKind::Usb);
+    let usb = engine.toolbar_sessions().await.into_iter().next().unwrap();
+    assert_eq!(engine.snapshot().await.sessions.first().unwrap().transport, TransportKind::Usb);
     assert!(!calls(&state).contains("-s 192.168."));
     engine.set_wifi_enabled(true).await.unwrap(); engine.set_wifi_enabled(false).await.unwrap();
-    let kept = engine.toolbar_session().await.unwrap(); assert_eq!(usb.token, kept.token); assert_eq!(usb.process_id, kept.process_id); assert!(kept.running);
+    let kept = engine.toolbar_sessions().await.into_iter().next().unwrap(); assert_eq!(usb.token, kept.token); assert_eq!(usb.process_id, kept.process_id); assert!(kept.running);
     let before = starts(&state); clear_calls(&state);
     fs::remove_file(state.join("usb-online")).unwrap(); wait_session(&engine, None).await;
     tokio::time::sleep(Duration::from_millis(800)).await;
@@ -87,11 +87,11 @@ async fn main() {
     let enabled = engine.set_wifi_enabled(true).await.unwrap(); assert_eq!(enabled.saved_devices.len(), 2);
     assert!(enabled.devices.iter().any(|device| device.transports.iter().any(|transport| transport.kind == TransportKind::Wifi)));
     engine.start_mirror(id.clone(), TransportPreference::Wifi).await.unwrap();
-    let wifi = engine.toolbar_session().await.unwrap();
+    let wifi = engine.toolbar_sessions().await.into_iter().next().unwrap();
     let mut settings = engine.snapshot().await.settings; settings.wifi_enabled = false; settings.max_fps = Some(60);
     let disabled = engine.save_settings(settings).await.unwrap();
-    assert!(!disabled.settings.wifi_enabled); assert_eq!(disabled.settings.max_fps, Some(60)); assert!(disabled.session.is_none());
-    assert!(engine.toolbar_session().await.is_none());
+    assert!(!disabled.settings.wifi_enabled); assert_eq!(disabled.settings.max_fps, Some(60)); assert!(disabled.sessions.is_empty());
+    assert!(engine.toolbar_sessions().await.is_empty());
     assert!(engine.navigate(wifi.token, qzz_engine_tests::models::NavigationAction::Back).await.is_err());
     assert!(!calls(&state).lines().any(|line| line.starts_with("disconnect") || line.contains("kill-server")));
     println!("PASS: re-enabling restores remembered endpoints; save_settings(false) stops only the owned Wi-Fi child without global ADB changes");
@@ -106,17 +106,17 @@ async fn main() {
     assert!(engine.snapshot().await.devices.is_empty());
     fs::remove_file(state.join("delay-metadata")).unwrap();
     assert!(starting.await.unwrap().is_err()); switching.await.unwrap().unwrap();
-    assert_eq!(starts(&state), before); assert!(engine.snapshot().await.session.is_none());
+    assert_eq!(starts(&state), before); assert!(engine.snapshot().await.sessions.is_empty());
     println!("PASS: disabling during final Wi-Fi identity verification cancels startup before a child can spawn");
 
     engine.set_wifi_enabled(true).await.unwrap(); fs::write(state.join("delay-start"), "").unwrap();
     let starter = engine.clone(); let device = id.clone();
     let starting = tokio::spawn(async move { starter.start_mirror(device, TransportPreference::Wifi).await });
-    for _ in 0..160 { if engine.toolbar_session().await.is_some() { break; } tokio::time::sleep(Duration::from_millis(25)).await; }
-    assert!(!engine.toolbar_session().await.unwrap().running);
+    for _ in 0..160 { if !engine.toolbar_sessions().await.is_empty() { break; } tokio::time::sleep(Duration::from_millis(25)).await; }
+    assert!(!engine.toolbar_sessions().await.into_iter().next().unwrap().running);
     tokio::time::timeout(Duration::from_secs(3), engine.set_wifi_enabled(false)).await.unwrap().unwrap();
     let _ = starting.await.unwrap(); fs::remove_file(state.join("delay-start")).unwrap();
-    assert!(engine.snapshot().await.session.is_none()); assert!(engine.toolbar_session().await.is_none());
+    assert!(engine.snapshot().await.sessions.is_empty()); assert!(engine.toolbar_sessions().await.is_empty());
     println!("PASS: disabling remains available while Wi-Fi waits for first video and terminates the registered child promptly");
 
     fs::write(state.join("usb-online"), "").unwrap(); engine.set_wifi_enabled(true).await.unwrap();
@@ -126,7 +126,7 @@ async fn main() {
     marker(&state, "metadata-waiting").await;
     let switcher = engine.clone(); let switching = tokio::spawn(async move { switcher.set_wifi_enabled(false).await });
     wait_disabled(&engine).await; fs::remove_file(state.join("delay-metadata")).unwrap(); switching.await.unwrap().unwrap();
-    assert_eq!(starts(&state), before); assert!(engine.snapshot().await.session.is_none());
+    assert_eq!(starts(&state), before); assert!(engine.snapshot().await.sessions.is_empty());
     assert!(!engine.snapshot().await.logs.iter().any(|entry| entry.message.contains("无线恢复失败")));
     println!("PASS: disabling during USB-loss recovery invalidates the pending recovery without spawning Wi-Fi or reporting a false recovery failure");
 
@@ -144,7 +144,7 @@ async fn main() {
     let snapshot = engine.snapshot().await;
     assert_eq!(snapshot.settings.preferred_transport, TransportPreference::Usb);
     assert_eq!(snapshot.settings.last_device_id.as_deref(), Some(id.as_str()));
-    assert_eq!(snapshot.session.unwrap().transport, TransportKind::Usb);
+    assert_eq!(snapshot.sessions.first().unwrap().transport, TransportKind::Usb);
     println!("PASS: a Wi-Fi toggle queued during USB discovery preserves the eventual USB session and its freshly committed device preferences");
     engine.shutdown().await;
 }

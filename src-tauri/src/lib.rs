@@ -45,8 +45,8 @@ async fn start_mirror(engine: State<'_, Engine>, device_id: String, transport: T
 }
 
 #[tauri::command]
-async fn stop_mirror(engine: State<'_, Engine>) -> Result<Snapshot, String> {
-    engine.stop_mirror().await
+async fn stop_mirror(engine: State<'_, Engine>, device_id: String) -> Result<Snapshot, String> {
+    engine.stop_mirror(device_id).await
 }
 
 #[tauri::command]
@@ -156,15 +156,16 @@ pub fn run() {
             let tracking_engine = engine.clone();
             tauri::async_runtime::spawn(async move {
                 while !controller.is_stopped() {
-                    controller.set_target(tracking_engine.toolbar_session().await.map(|session| navigation_bar::Target {
+                    let targets = tracking_engine.toolbar_sessions().await.into_iter().map(|session| navigation_bar::Target {
                         process_id: session.process_id, token: session.token, running: session.running,
-                    }));
+                    }).collect();
+                    controller.set_targets(targets);
                     tokio::time::sleep(std::time::Duration::from_millis(80)).await;
                 }
             });
             app.manage(navigation);
             let show = MenuItem::with_id(app, "show", "打开轻镜", true, None::<&str>)?;
-            let stop = MenuItem::with_id(app, "stop", "停止投屏", true, None::<&str>)?;
+            let stop = MenuItem::with_id(app, "stop", "停止全部投屏", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show, &stop, &quit])?;
             let icon = tauri::image::Image::from_bytes(include_bytes!("../icons/icon.png"))?;
@@ -177,7 +178,7 @@ pub fn run() {
                     "show" => show_main(app),
                     "stop" => {
                         let engine = app.state::<Engine>().inner().clone();
-                        tauri::async_runtime::spawn(async move { let _ = engine.stop_mirror().await; });
+                        tauri::async_runtime::spawn(async move { let _ = engine.stop_all_mirrors().await; });
                     }
                     "quit" => {
                         if !app.state::<ExitState>().quitting.swap(true, Ordering::SeqCst) {

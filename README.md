@@ -2,20 +2,18 @@
 
 一个用于 Windows 的简洁安卓投屏控制面板。基于官方 [scrcpy](https://github.com/Genymobile/scrcpy)，提供设备选择、USB / Wi-Fi 连接和无线配置。投屏画面使用独立的 scrcpy 窗口，电脑键鼠操作直接由 scrcpy 完成。
 
-[v0.4.1 下载](https://github.com/Mai-Mu/qzz-mirror/releases/tag/v0.4.1) · [更新日志](CHANGELOG.md) · [验收记录](docs/acceptance.md)
+[v0.5.1 下载](https://github.com/Mai-Mu/qzz-mirror/releases/tag/v0.5.1) · [更新日志](CHANGELOG.md) · [验收记录](docs/acceptance.md)
 
-**v0.4.1（2026-11-05）** 相比 v0.3.1，新增后台 USB 设备通知、侧栏 Wi-Fi 总开关与标题栏版本号，并修复首次通知发送前的权限查询错误。面板最小化或隐藏到托盘时，新检测到已授权 USB 设备，可从通知直接开始投屏。继续使用官方 scrcpy **5.0.1**，保留原有连接、设置、三键栏和投屏操作。0.4.0 仅为本地开发历史，没有对应 GitHub 标签。
+**v0.5.1（2026-11-20）** 支持多台安卓设备同时投屏。每台设备有独立窗口、三键栏和停止操作。此版本还修复了编码器重试成功后仍显示投屏失败的问题，并在面板报错中标明对应设备。内置 scrcpy **5.0.1**。
 
-首版面向个人使用，一次投屏一台设备。已确认范围见 [产品决策](docs/decisions.md)，验证项目见 [验收清单](docs/acceptance.md)。
+已确认范围见 [产品决策](docs/decisions.md)，验证项目见 [验收清单](docs/acceptance.md)。
 
 ## 安装或解压使用
 
-v0.4.1 面向 Windows x64，发行文件分为以下两种形式，并提供各自的 SHA-256 校验文件。下载入口为 [v0.4.1 发布页](https://github.com/Mai-Mu/qzz-mirror/releases/tag/v0.4.1)，实际构建与发布结果见 [验收记录](docs/acceptance.md)。
+v0.5.1 面向 Windows x64，提供安装包、便携包和各自的 SHA-256 校验文件。 [GitHub 发布页](https://github.com/Mai-Mu/qzz-mirror/releases/tag/v0.5.1)
 
-- 安装包 `Qzz-Mirror-0.4.1-win-x64-setup.exe`：按向导安装，提供开始菜单和桌面入口。
-- 便携包 `Qzz-Mirror-0.4.1-win-x64.zip`：完整解压，保留 `qzz-mirror.exe` 与旁边的 `runtime` 文件夹后运行。
-
-0.4.1 运行时补齐缺失的当前用户通知应用标识元数据，无需依赖安装快捷方式才能尝试通知；不会更改 Windows 通知开关。系统通知显示与真机按钮流程仍需按 [验收记录](docs/acceptance.md) 验证。手机需先开启 USB 调试并允许电脑授权。
+- 安装包 `Qzz-Mirror-0.5.1-win-x64-setup.exe` 按向导安装，提供开始菜单和桌面入口。
+- 便携包 `Qzz-Mirror-0.5.1-win-x64.zip` 完整解压后即可运行，需保留 `qzz-mirror.exe` 旁的 `runtime` 文件夹。
 
 便携包使用步骤：
 
@@ -35,13 +33,19 @@ v0.4.1 面向 Windows x64，发行文件分为以下两种形式，并提供各�
 
 “自动”连接方式会在**所选设备**内部优先使用 USB；没有可用 USB 时再使用该设备已连接的 Wi-Fi。USB 与 Wi-Fi 同时在线时，可手动选择连接方式，不需要自己输入设备序列号。
 
+### 同时投屏多台设备（0.5.0）
+
+在设备列表选中第一台设备并开始投屏，再选中另一台设备开始投屏。每台设备有独立的投屏窗口和三键栏。同一台设备同时接入 USB 和 Wi-Fi 时，只能开一个投屏窗口。
+
+在面板中选中设备后点击“停止投屏”，或直接关闭对应的投屏窗口。需要一起结束时，在托盘菜单选择“停止全部投屏”。
+
 ### 先用 USB 配置无线
 
 1. 手机与电脑接入同一局域网，保持 USB 已连接并授权。
 2. 打开“配置无线”，选择“USB 辅助配置”。
 3. 等待无线连接验证成功。可以选择 Wi-Fi 后开始投屏，再拔掉数据线。
 
-Wi-Fi 总开关开启时，使用 USB 投屏后拔线，轻镜会对同一设备已配置的无线连接尝试恢复；恢复会重新打开 scrcpy 窗口，画面有短暂中断。失败时查看原因并点击重试。设备重启、网络变化或无线地址失效后，可能需要重新插 USB 配置，不能保证永久免插线。
+Wi-Fi 总开关开启时，使用 USB 投屏后拔线，轻镜会对同一设备已配置的无线连接尝试恢复；恢复会重新打开这台设备的 scrcpy 窗口，画面有短暂中断。失败时查看原因并点击重试。设备重启、网络变化或无线地址失效后，可能需要重新插 USB 配置，不能保证永久免插线。
 
 ### Android 11 及以上使用配对码
 
@@ -57,7 +61,7 @@ Wi-Fi 总开关开启时，使用 USB 投屏后拔线，轻镜会对同一设备
 
 ### Wi-Fi 总开关（0.4.1）
 
-侧栏底部的 Wi-Fi 开关默认开启，并记住选择。关闭后只显示 USB 连接，隐藏无线设备、Wi-Fi 标签与已保存无线地址，同时禁用无线连接、配置、配对和自动恢复。正在由轻镜进行的 Wi-Fi 投屏会停止，USB 投屏继续。
+侧栏底部的 Wi-Fi 开关默认开启，并记住选择。关闭后只显示 USB 连接，隐藏无线设备、Wi-Fi 标签与已保存无线地址，同时禁用无线连接、配置、配对和自动恢复。轻镜会停止所有 Wi-Fi 投屏，USB 投屏继续。
 
 重新开启后，已保存地址恢复显示，可手动连接；开关不会删除地址、关闭手机 Wi-Fi、全局断开 ADB 或干预其他软件的投屏。关闭时若需要无线连接，请先重新开启开关。
 
@@ -67,7 +71,7 @@ Wi-Fi 总开关开启时，使用 USB 投屏后拔线，轻镜会对同一设备
 
 全屏或窗口下方空间不足时，按键栏自动收起。将鼠标移至可见画面底边附近可短暂唤出浮层，移开后自动隐藏。按键栏不改变 scrcpy 的窗口大小、位置、快捷键及原有键鼠操作，主面板也不增加三键控件。
 
-按键仅作用于当前已就绪的投屏设备；停止或恢复连接期间不能向旧会话发送按键，失败信息进入现有连接日志。
+按键作用于该窗口对应的已就绪设备。停止或恢复连接期间，旧会话的按键请求会被拒绝，失败信息进入连接日志。
 
 0.3.1 改用运行中 scrcpy 的原生快捷键通道，每次点击不再启动 ADB 输入命令；拖动时只移动底栏，缩放时使用双缓冲重绘。按住 Shift、Ctrl、Alt、Windows 键或对应快捷键字母时，请松开后再点击导航。
 
@@ -79,7 +83,6 @@ Wi-Fi 总开关开启时，使用 USB 投屏后拔线，轻镜会对同一设备
 - 分辨率固定使用设备原始尺寸，没有分辨率或三档画质控件。声音转发与投屏置顶在设置页分别调整，保存后重新开始投屏生效。
 - Android 9 不能转发声音，轻镜会关闭该设备的音频；画面和键鼠操作可以继续。scrcpy 音频转发要求 Android 11 及以上，Android 11 开始投屏时还需保持设备解锁。参考 [scrcpy 音频文档](https://github.com/Genymobile/scrcpy/blob/v5.0.1/doc/audio.md)。
 - 关闭控制面板会进入系统托盘，投屏继续。通过托盘打开面板；需要彻底退出时，右键托盘图标选择“退出”。退出会结束轻镜自己启动的投屏会话。
-- 在面板点击“停止投屏”，或关闭独立投屏窗口，可以结束当前投屏。
 
 ### 后台 USB 设备通知（0.4.0 新增，0.4.1 修复）
 
@@ -160,16 +163,16 @@ npm run package
 
 ```text
 outputs/
-  Qzz-Mirror-0.4.1-win-x64/
-  Qzz-Mirror-0.4.1-win-x64.zip
-  Qzz-Mirror-0.4.1-win-x64.zip.sha256
+  Qzz-Mirror-0.5.1-win-x64/
+  Qzz-Mirror-0.5.1-win-x64.zip
+  Qzz-Mirror-0.5.1-win-x64.zip.sha256
 ```
 
 `package-manifest.json` 保存主程序及运行核心清单的校验值；ZIP 的 SHA-256 单独提供。重复打包会将旧产物移入 `.work` 备份后发布新产物，不递归删除已有目录。构建失败时会保留暂存内容用于排查。
 
 便携包包含更新日志及 `third-party-licenses` 许可文档。下载包的运行核心清单仅保留版本、上游来源和文件校验值，不包含开发机绝对路径；本地准备清单仍保留原始来源便于核对。
 
-若默认输出目录中的程序仍在运行，可使用 `node scripts/package.mjs --output "outputs/development/0.4.1"` 输出到另一处项目内目录，保留正在运行的版本。
+若默认输出目录中的程序仍在运行，可使用 `node scripts/package.mjs --output "outputs/development/0.5.1"` 输出到另一处项目内目录，保留正在运行的版本。
 
 ### 生成 Windows x64 安装包
 
@@ -179,10 +182,10 @@ outputs/
 npm run package:installer
 
 # 如刚用 npm run package 重新构建过，显式选用新便携目录
-node scripts/package-installer.mjs --from "outputs/Qzz-Mirror-0.4.1-win-x64"
+node scripts/package-installer.mjs --from "outputs/Qzz-Mirror-0.5.1-win-x64"
 ```
 
-默认优先使用 `outputs/releases/v0.4.1/Qzz-Mirror-0.4.1-win-x64`，其次使用 `outputs` 下的同名目录；主程序校验值必须与当前 release 输出一致。预计产物位于 `outputs/installers/v0.4.1/`，包含 `Qzz-Mirror-0.4.1-win-x64-setup.exe`、`.sha256` 和安装资源清单。首次构建会下载并校验 NSIS 工具。原 v0.3.1 安装包仍属于已发布历史版本，不包含后台 USB 通知。
+默认优先使用 `outputs/releases/v0.5.1/Qzz-Mirror-0.5.1-win-x64`，其次使用 `outputs` 下的同名目录。主程序校验值必须与当前 release 输出一致。构建产物位于 `outputs/installers/v0.5.1/`，包含 `Qzz-Mirror-0.5.1-win-x64-setup.exe`、`.sha256` 和安装资源清单。首次构建会下载并校验 NSIS 工具。
 
 安装向导支持简体中文和英文，按系统语言选择，默认仅为当前用户安装，并创建开始菜单与桌面入口。缺少 WebView2 时需联网补齐；scrcpy、ADB 与许可文件已包含。升级前请从托盘退出旧版，卸载可通过 Windows“设置 → 应用”执行。安装目录的 `data` 默认保留，便携版设置不会自动迁移，详见随安装文件提供的 `INSTALLATION.txt`。
 

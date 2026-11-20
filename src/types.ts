@@ -32,9 +32,10 @@ export interface Snapshot {
   devices: Device[];
   savedDevices: SavedDevice[];
   settings: Settings;
-  session: Session | null;
+  sessions: Session[];
   logs: LogEntry[];
   engineVersion: string;
   busy: boolean;
   lastError: string | null;
+  lastErrorDeviceId: string | null;
 }

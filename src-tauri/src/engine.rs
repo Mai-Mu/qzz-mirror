@@ -18,13 +18,15 @@ use std::{
 use tokio::{
     io::{AsyncBufReadExt, AsyncRead, AsyncWriteExt, BufReader},
     process::{Child, Command},
-    sync::{broadcast, Mutex, OwnedMutexGuard, RwLock},
+    sync::{broadcast, oneshot, Mutex, OwnedMutexGuard, RwLock},
     time::{sleep, timeout},
 };
 
 const ADB_TIMEOUT: Duration = Duration::from_secs(8);
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(12);
 const MAX_LOGS: usize = 100;
+
+type Startup = oneshot::Receiver<Result<(), String>>;
 
 #[derive(Clone)]
 pub struct Engine(Arc<Inner>);
@@ -45,7 +47,7 @@ struct Inner {
     operation: Arc<Mutex<()>>,
     refresh_gate: Mutex<()>,
     busy: Arc<AtomicBool>,
-    active: Mutex<Option<ActiveSession>>,
+    sessions: Mutex<HashMap<String, SessionSlot>>,
     navigation: Mutex<()>,
     navigation_dispatcher: Arc<dyn NavigationDispatcher>,
     settings_update: Mutex<()>,
@@ -53,12 +55,10 @@ struct Inner {
     wifi_epoch: AtomicU64,
     cache: Mutex<HashMap<String, CachedMetadata>>,
     next_token: AtomicU64,
-    stop_epoch: AtomicU64,
     background_started: AtomicBool,
     shutting_down: AtomicBool,
     notification_background: AtomicBool,
     notification_window_epoch: AtomicU64,
-    notification_starting: AtomicBool,
     usb_notifications: StdMutex<UsbNotificationPolicy>,
     usb_notification_events: broadcast::Sender<UsbNotificationEvent>,
 }
@@ -67,36 +67,44 @@ struct State {
     devices: Vec<Device>,
     saved_devices: Vec<SavedDevice>,
     settings: Settings,
-    session: Option<Session>,
     logs: Vec<LogEntry>,
     engine_version: String,
     last_error: Option<String>,
+    last_error_device_id: Option<String>,
+}
+
+// An empty initial reservation protects launches while ADB is running. A
+// wireless recovery keeps its visible session while the old child is gone.
+enum SessionSlot {
+    Pending { token: u64, recovery: Option<Session> },
+    Live(ActiveSession),
+}
+
+impl SessionSlot {
+    fn session(&self) -> Option<&Session> {
+        match self {
+            Self::Pending { recovery, .. } => recovery.as_ref(),
+            Self::Live(current) => Some(&current.session),
+        }
+    }
 }
 
 struct ActiveSession {
     token: u64,
     child: Arc<Mutex<Child>>,
     session: Session,
-    user_stop: Arc<AtomicBool>,
     // Only an actual ADB transport-loss report permits automatic recovery.
     // A normal window close never becomes a reconnection request.
     connection_lost: Arc<AtomicBool>,
-    recovery_attempted: bool,
-    stop_epoch: u64,
     recovery_serial: Option<String>,
+    startup: Option<oneshot::Sender<Result<(), String>>>,
+    startup_error: Option<String>,
+    capture_error: Option<String>,
 }
 
 struct OperationGuard {
     _guard: OwnedMutexGuard<()>,
     busy: Arc<AtomicBool>,
-}
-
-struct NotificationStartGuard<'a>(&'a AtomicBool);
-impl<'a> NotificationStartGuard<'a> {
-    fn new(flag: &'a AtomicBool) -> Self { flag.store(true, Ordering::SeqCst); Self(flag) }
-}
-impl Drop for NotificationStartGuard<'_> {
-    fn drop(&mut self) { self.0.store(false, Ordering::SeqCst); }
 }
 
 impl Drop for OperationGuard {
@@ -183,15 +191,15 @@ impl Engine {
                 devices: vec![],
                 saved_devices: persisted.saved_devices,
                 settings: persisted.settings,
-                session: None,
                 logs,
                 engine_version: "scrcpy".into(),
                 last_error: None,
+                last_error_device_id: None,
             }),
             operation: Arc::new(Mutex::new(())),
             refresh_gate: Mutex::new(()),
             busy: Arc::new(AtomicBool::new(false)),
-            active: Mutex::new(None),
+            sessions: Mutex::new(HashMap::new()),
             navigation: Mutex::new(()),
             navigation_dispatcher,
             settings_update: Mutex::new(()),
@@ -199,12 +207,10 @@ impl Engine {
             wifi_epoch: AtomicU64::new(0),
             cache: Mutex::new(HashMap::new()),
             next_token: AtomicU64::new(1),
-            stop_epoch: AtomicU64::new(0),
             background_started: AtomicBool::new(false),
             shutting_down: AtomicBool::new(false),
             notification_background: AtomicBool::new(false),
             notification_window_epoch: AtomicU64::new(0),
-            notification_starting: AtomicBool::new(false),
             usb_notifications: StdMutex::new(UsbNotificationPolicy::default()),
             usb_notification_events,
         })))
@@ -241,10 +247,8 @@ impl Engine {
     }
 
     pub async fn usb_notification_is_current(&self, token: &str) -> bool {
-        if self.0.shutting_down.load(Ordering::SeqCst) || self.0.notification_starting.load(Ordering::SeqCst) { return false; }
-        let session_present = self.0.state.read().await.session.is_some();
-        let active_present = self.0.active.lock().await.is_some();
-        if session_present || active_present || self.0.notification_starting.load(Ordering::SeqCst) { return false; }
+        let sessions = self.0.sessions.lock().await;
+        if self.0.shutting_down.load(Ordering::SeqCst) || !sessions.is_empty() { return false; }
         self.0.usb_notifications.lock().unwrap_or_else(|error| error.into_inner()).is_current(token)
     }
 
@@ -257,7 +261,7 @@ impl Engine {
             }
             let mut next_refresh = Instant::now();
             while !engine.0.shutting_down.load(Ordering::SeqCst) {
-                engine.poll_session().await;
+                engine.poll_sessions().await;
                 if Instant::now() >= next_refresh {
                     next_refresh = Instant::now() + Duration::from_secs(3);
                     // Refresh has its own task so a slow/offline ADB client cannot
@@ -271,6 +275,7 @@ impl Engine {
                             let mut state = refresh_engine.0.state.write().await;
                             if state.last_error.as_ref() != Some(&error) {
                                 state.last_error = Some(error.clone());
+                                state.last_error_device_id = None;
                                 push_log(&mut state, LogLevel::Warning, error);
                             }
                         }
@@ -282,35 +287,40 @@ impl Engine {
     }
 
     pub async fn snapshot(&self) -> Snapshot {
+        let sessions = self.0.sessions.lock().await;
         let state = self.0.state.read().await;
         let wifi_enabled = self.0.wifi_enabled.load(Ordering::SeqCst);
         let mut settings = state.settings.clone();
         settings.wifi_enabled = wifi_enabled;
+        let mut visible_sessions = sessions.values().filter_map(SessionSlot::session).cloned().collect::<Vec<_>>();
+        visible_sessions.sort_unstable_by(|a, b| a.started_at.cmp(&b.started_at).then_with(|| a.device_id.cmp(&b.device_id)));
         Snapshot {
             devices: visible_devices(&state.devices, wifi_enabled),
             saved_devices: if wifi_enabled { state.saved_devices.clone() } else { vec![] },
             settings,
-            session: state.session.clone(),
+            sessions: visible_sessions,
             logs: state.logs.clone(),
             engine_version: state.engine_version.clone(),
             busy: self.0.busy.load(Ordering::SeqCst),
             last_error: state.last_error.clone(),
+            last_error_device_id: state.last_error_device_id.clone(),
         }
     }
 
     /// No ADB calls or metadata refreshes: suitable for a native window tracker.
-    pub async fn toolbar_session(&self) -> Option<ToolbarSession> {
-        if self.0.shutting_down.load(Ordering::SeqCst) { return None; }
-        let active = self.0.active.lock().await;
-        let current = active.as_ref()?;
-        if current.user_stop.load(Ordering::SeqCst)
-            || current.stop_epoch != self.0.stop_epoch.load(Ordering::SeqCst) { return None; }
-        let child = current.child.lock().await;
-        Some(ToolbarSession {
-            process_id: child.id()?,
-            token: current.token,
-            running: current.session.phase == SessionPhase::Running,
-        })
+    pub async fn toolbar_sessions(&self) -> Vec<ToolbarSession> {
+        if self.0.shutting_down.load(Ordering::SeqCst) { return vec![]; }
+        let sessions = self.0.sessions.lock().await;
+        let mut toolbars = Vec::new();
+        for slot in sessions.values() {
+            let SessionSlot::Live(current) = slot else { continue; };
+            let child = current.child.lock().await;
+            if let Some(process_id) = child.id() {
+                toolbars.push(ToolbarSession { process_id, token: current.token, running: current.session.phase == SessionPhase::Running });
+            }
+        }
+        toolbars.sort_unstable_by_key(|toolbar| toolbar.token);
+        toolbars
     }
 
     pub async fn navigate(&self, token: u64, action: NavigationAction) -> Result<(), String> {
@@ -327,8 +337,11 @@ impl Engine {
     async fn navigate_inner(&self, token: u64, action: NavigationAction) -> Result<(), String> {
         // Keep the session gate until all four native messages are submitted.
         // The dispatcher is synchronous/non-waiting and has no process/ADB path.
-        let active = self.0.active.lock().await;
-        let current = active.as_ref().ok_or_else(|| "当前没有正在投屏的设备。".to_string())?;
+        let sessions = self.0.sessions.lock().await;
+        let current = sessions.values().find_map(|slot| match slot {
+            SessionSlot::Live(current) if current.token == token => Some(current),
+            _ => None,
+        }).ok_or_else(|| "投屏窗口已切换或结束，请在当前投屏窗口重试。".to_string())?;
         self.validate_navigation(current, token)?;
         let mut child = current.child.lock().await;
         if child.try_wait().map_err(|error| format!("无法确认投屏进程状态：{error}"))?.is_some() {
@@ -341,9 +354,8 @@ impl Engine {
 
     fn validate_navigation(&self, current: &ActiveSession, token: u64) -> Result<(), String> {
         validate_navigation_request(token, current.token, current.session.phase,
-            current.user_stop.load(Ordering::SeqCst)
-                || current.stop_epoch != self.0.stop_epoch.load(Ordering::SeqCst)
-                || self.0.shutting_down.load(Ordering::SeqCst))
+            self.0.shutting_down.load(Ordering::SeqCst)
+                || (current.session.transport == TransportKind::Wifi && !self.0.wifi_enabled.load(Ordering::SeqCst)))
     }
 
     async fn begin_operation(&self) -> Result<OperationGuard, String> {
@@ -368,8 +380,13 @@ impl Engine {
     async fn finish(&self, result: Result<(), String>, guard: OperationGuard) -> Result<Snapshot, String> {
         {
             let mut state = self.0.state.write().await;
-            state.last_error = result.as_ref().err().cloned();
-            if let Err(error) = &result { push_log(&mut state, LogLevel::Error, error.clone()); }
+            if let Err(error) = &result {
+                state.last_error = Some(error.clone());
+                state.last_error_device_id = None;
+                push_log(&mut state, LogLevel::Error, error.clone());
+            } else if state.last_error_device_id.is_none() {
+                state.last_error = None;
+            }
         }
         drop(guard);
         result?;
@@ -385,15 +402,18 @@ impl Engine {
     pub async fn select_device(&self, device_id: Option<String>) -> Result<Snapshot, String> {
         let guard = self.begin_operation().await?;
         let result = async {
+            let sessions = self.0.sessions.lock().await;
             let mut state = self.0.state.write().await;
             if let Some(id) = &device_id {
-                if !visible_devices(&state.devices, self.0.wifi_enabled.load(Ordering::SeqCst)).iter().any(|device| &device.id == id)
+                if !sessions.contains_key(id)
+                    && !visible_devices(&state.devices, self.0.wifi_enabled.load(Ordering::SeqCst)).iter().any(|device| &device.id == id)
                     && !(self.0.wifi_enabled.load(Ordering::SeqCst) && state.saved_devices.iter().any(|device| &device.id == id)) {
                     return Err("设备列表已变化，请刷新后重新选择。".into());
                 }
             }
             state.settings.last_device_id = device_id;
             drop(state);
+            drop(sessions);
             self.persist().await
         }.await;
         self.finish(result, guard).await
@@ -420,16 +440,13 @@ impl Engine {
         if changed {
             // Share the final spawn gate. A spawn either observes disabled or
             // registers a child that the following stop can immediately see.
-            let active = self.0.active.lock().await;
+            let mut sessions = self.0.sessions.lock().await;
             self.0.wifi_enabled.store(settings.wifi_enabled, Ordering::SeqCst);
             self.0.wifi_epoch.fetch_add(1, Ordering::SeqCst);
             if !settings.wifi_enabled {
-                if let Some(current) = active.as_ref().filter(|current| current.session.transport == TransportKind::Wifi) {
-                    current.user_stop.store(true, Ordering::SeqCst);
-                    self.0.stop_epoch.fetch_add(1, Ordering::SeqCst);
-                }
+                sessions.retain(|_, slot| !matches!(slot, SessionSlot::Pending { recovery: Some(_), .. }));
             }
-            drop(active);
+            drop(sessions);
             self.0.state.write().await.settings.wifi_enabled = settings.wifi_enabled;
         }
         let immediate_result = if changed && !settings.wifi_enabled { self.stop_wifi_inner().await } else { Ok(()) };
@@ -468,59 +485,49 @@ impl Engine {
     }
 
     pub async fn start_mirror(&self, device_id: String, transport: TransportPreference) -> Result<Snapshot, String> {
-        let guard = self.begin_operation().await?;
-        let _notification_start = NotificationStartGuard::new(&self.0.notification_starting);
-        let request_epoch = self.0.stop_epoch.load(Ordering::SeqCst);
+        let token = match self.reserve_launch(&device_id).await {
+            Ok(token) => token,
+            Err(error) => {
+                self.record_session_error(&device_id, &error).await;
+                return Err(error);
+            }
+        };
+        let guard = self.begin_launch_operation(&device_id, token).await?;
         let result = async {
             if transport == TransportPreference::Wifi { self.require_wifi_enabled()?; }
-            if self.0.active.lock().await.is_some() {
-                return Err("已有设备正在投屏，请先停止当前投屏。".into());
-            }
             self.refresh_inner().await?;
             let device = self.find_device(&device_id).await?;
             let selected = choose_transport(&device, transport)?.clone();
+            self.ensure_pending_launch(&device_id, token).await?;
             {
                 let mut state = self.0.state.write().await;
-                state.settings.last_device_id = Some(device_id);
+                state.settings.last_device_id = Some(device_id.clone());
                 state.settings.preferred_transport = transport;
             }
             self.persist().await?;
-            if self.0.stop_epoch.load(Ordering::SeqCst) != request_epoch
-                || self.0.shutting_down.load(Ordering::SeqCst) {
-                return Err("本次启动已取消。".into());
-            }
-            self.launch_session(&device, &selected, false, request_epoch).await?;
-            self.wait_for_startup().await
+            self.launch_session(&device, &selected, token, None).await
         }.await;
-        self.finish(result, guard).await
+        self.finish_launch(&device_id, token, result, guard).await
     }
 
     /// A toast action is capability-bound to one observed USB attachment. It
     /// never falls back to the user's preferred Wi-Fi transport or switches an
     /// existing Starting/Running/Reconnecting session.
     pub async fn start_from_usb_notification(&self, token: String) -> Result<Snapshot, String> {
-        let guard = match self.begin_operation().await {
-            Ok(guard) => guard,
+        let (notice, launch_token) = match self.reserve_notification_launch(&token).await {
+            Ok(reservation) => reservation,
             Err(error) => {
-                self.dismiss_usb_notification(&token);
                 if !self.0.shutting_down.load(Ordering::SeqCst) {
                     let mut state = self.0.state.write().await;
                     state.last_error = Some(error.clone());
+                    state.last_error_device_id = None;
                     push_log(&mut state, LogLevel::Error, error.clone());
                 }
                 return Err(error);
             }
         };
-        let _notification_start = NotificationStartGuard::new(&self.0.notification_starting);
-        let request_epoch = self.0.stop_epoch.load(Ordering::SeqCst);
+        let guard = self.begin_launch_operation(&notice.device_id, launch_token).await?;
         let result = async {
-            if self.0.active.lock().await.is_some() || self.0.state.read().await.session.is_some() {
-                self.clear_usb_notifications();
-                return Err("已有设备正在投屏，本次通知不会切换当前投屏。".into());
-            }
-            let notice = self.0.usb_notifications.lock().unwrap_or_else(|error| error.into_inner()).claim(&token);
-            let _ = self.0.usb_notification_events.send(UsbNotificationEvent::Remove { token: token.clone() });
-            let notice = notice.ok_or_else(|| "这条连接通知已失效，请在主界面重新选择当前 USB 设备。".to_string())?;
             self.refresh_inner().await?;
             if !self.0.usb_notifications.lock().unwrap_or_else(|error| error.into_inner()).attachment_is_current(&notice) {
                 return Err("通知对应的 USB 连接已发生变化，本次启动已取消。请重新选择当前设备。".into());
@@ -531,35 +538,27 @@ impl Engine {
                 .ok_or_else(|| "通知对应的 USB 设备已离线或尚未授权，请重新连接。".to_string())?;
             self.0.state.write().await.settings.last_device_id = Some(device.id.clone());
             self.persist().await?;
-            self.launch_session_checked(&device, &transport, false, request_epoch, Some(&notice)).await?;
-            self.wait_for_startup().await
+            self.launch_session(&device, &transport, launch_token, Some(&notice)).await
         }.await;
-        self.finish(result, guard).await
+        self.finish_launch(&notice.device_id, launch_token, result, guard).await
     }
 
-    pub async fn stop_mirror(&self) -> Result<Snapshot, String> {
-        // Stop must remain available while startup waits for its first frame.
-        // Mark intent before acquiring the operation lock so recovery cannot race it.
-        self.0.stop_epoch.fetch_add(1, Ordering::SeqCst);
-        if let Some(active) = self.0.active.lock().await.as_ref() {
-            active.user_stop.store(true, Ordering::SeqCst);
-        }
-        // End an already-running process immediately, even while a background
-        // device refresh owns the operation lock. Recheck once after the lock.
-        let immediate_result = self.stop_inner().await;
-        let lock = self.0.operation.clone().lock_owned().await;
-        self.0.busy.store(true, Ordering::SeqCst);
-        let guard = OperationGuard { _guard: lock, busy: self.0.busy.clone() };
-        let result = self.stop_inner().await.and(immediate_result);
-        self.finish(result, guard).await
+    pub async fn stop_mirror(&self, device_id: String) -> Result<Snapshot, String> {
+        self.stop_sessions(|id, _| id == device_id).await?;
+        Ok(self.snapshot().await)
+    }
+
+    pub async fn stop_all_mirrors(&self) -> Result<Snapshot, String> {
+        self.stop_sessions(|_, _| true).await?;
+        Ok(self.snapshot().await)
     }
 
     pub async fn configure_wireless(&self, device_id: String) -> Result<Snapshot, String> {
         let guard = self.begin_operation().await?;
         let result = async {
             self.require_wifi_enabled()?;
-            if self.0.active.lock().await.is_some() {
-                return Err("配置无线会重启设备的调试连接。请先停止投屏，再配置无线。".into());
+            if self.0.sessions.lock().await.contains_key(&device_id) {
+                return Err("配置无线会重启设备的调试连接。请先停止该设备的投屏，再配置无线。".into());
             }
             self.refresh_inner().await?;
             let device = self.find_device(&device_id).await?;
@@ -642,12 +641,8 @@ impl Engine {
     pub async fn shutdown(&self) {
         self.0.shutting_down.store(true, Ordering::SeqCst);
         self.clear_usb_notifications();
-        self.0.stop_epoch.fetch_add(1, Ordering::SeqCst);
-        if let Some(active) = self.0.active.lock().await.as_ref() {
-            active.user_stop.store(true, Ordering::SeqCst);
-        }
+        let _ = self.stop_sessions(|_, _| true).await;
         let _guard = self.0.operation.lock().await;
-        let _ = self.stop_inner().await;
     }
 
     fn command(&self, executable: &str) -> Command {
@@ -708,17 +703,18 @@ impl Engine {
             Some(UsbPresence { serial: entry.serial.clone(), device_id: device.id.clone(), device_name: device.name.clone(),
                 transport_id: entry.transport_id.clone(), authorized: entry.state == "device" })
         }).collect();
-        let session_present = {
+        let sessions = self.0.sessions.lock().await;
+        let session_present = !sessions.is_empty();
+        {
             let mut state = self.0.state.write().await;
             state.devices = devices;
             if state.settings.last_device_id.is_none() && state.devices.len() == 1 {
                 state.settings.last_device_id = state.devices.first().map(|device| device.id.clone());
             }
-            state.session.is_some()
-        };
+        }
         let allowed = background && self.0.notification_background.load(Ordering::SeqCst)
             && window_epoch == self.0.notification_window_epoch.load(Ordering::SeqCst)
-            && !session_present && !self.0.notification_starting.load(Ordering::SeqCst)
+            && !session_present
             && !self.0.shutting_down.load(Ordering::SeqCst);
         let (removed, notices) = {
             let mut policy = self.0.usb_notifications.lock().unwrap_or_else(|error| error.into_inner());
@@ -728,6 +724,7 @@ impl Engine {
             let removed = old.into_iter().filter(|token| !policy.is_current(token)).collect::<Vec<_>>();
             (removed, notices)
         };
+        drop(sessions);
         for token in removed { let _ = self.0.usb_notification_events.send(UsbNotificationEvent::Remove { token }); }
         for notice in notices { let _ = self.0.usb_notification_events.send(UsbNotificationEvent::Show(notice)); }
         Ok(())
@@ -853,11 +850,92 @@ impl Engine {
         push_log(&mut *self.0.state.write().await, level, message);
     }
 
-    async fn launch_session(&self, device: &Device, transport: &Transport, recovered: bool, expected_epoch: u64) -> Result<(), String> {
-        self.launch_session_checked(device, transport, recovered, expected_epoch, None).await
+    async fn reserve_launch(&self, device_id: &str) -> Result<u64, String> {
+        let mut sessions = self.0.sessions.lock().await;
+        if self.0.shutting_down.load(Ordering::SeqCst) { return Err("程序正在退出，请稍候。".into()); }
+        if sessions.contains_key(device_id) {
+            return Err("该设备已在投屏或正在启动。".into());
+        }
+        Ok(self.insert_pending_launch(&mut sessions, device_id))
     }
 
-    async fn launch_session_checked(&self, device: &Device, transport: &Transport, recovered: bool, expected_epoch: u64, usb_notice: Option<&UsbNotification>) -> Result<(), String> {
+    async fn reserve_notification_launch(&self, notification_token: &str) -> Result<(UsbNotification, u64), String> {
+        let mut sessions = self.0.sessions.lock().await;
+        if self.0.shutting_down.load(Ordering::SeqCst) { return Err("程序正在退出，请稍候。".into()); }
+        if !sessions.is_empty() {
+            self.clear_usb_notifications();
+            return Err("已有设备正在投屏，本次通知不会切换当前投屏。".into());
+        }
+        let notice = self.0.usb_notifications.lock().unwrap_or_else(|error| error.into_inner()).claim(notification_token);
+        let _ = self.0.usb_notification_events.send(UsbNotificationEvent::Remove { token: notification_token.into() });
+        let notice = notice.ok_or_else(|| "这条连接通知已失效，请在主界面重新选择当前 USB 设备。".to_string())?;
+        let token = self.insert_pending_launch(&mut sessions, &notice.device_id);
+        Ok((notice, token))
+    }
+
+    fn insert_pending_launch(&self, sessions: &mut HashMap<String, SessionSlot>, device_id: &str) -> u64 {
+        let token = self.0.next_token.fetch_add(1, Ordering::SeqCst);
+        sessions.insert(device_id.into(), SessionSlot::Pending { token, recovery: None });
+        token
+    }
+
+    async fn begin_launch_operation(&self, device_id: &str, token: u64) -> Result<OperationGuard, String> {
+        match self.begin_operation().await {
+            Ok(guard) => {
+                self.ensure_pending_launch(device_id, token).await?;
+                Ok(guard)
+            }
+            Err(error) => {
+                self.finish_pending_launch(device_id, token, Some(&error)).await;
+                Err(error)
+            }
+        }
+    }
+
+    async fn ensure_pending_launch(&self, device_id: &str, token: u64) -> Result<(), String> {
+        let sessions = self.0.sessions.lock().await;
+        if matches!(sessions.get(device_id), Some(SessionSlot::Pending { token: current, .. }) if *current == token) {
+            Ok(())
+        } else {
+            Err("本次启动已取消。".into())
+        }
+    }
+
+    async fn finish_pending_launch(&self, device_id: &str, token: u64, error: Option<&str>) {
+        let mut sessions = self.0.sessions.lock().await;
+        if !matches!(sessions.get(device_id), Some(SessionSlot::Pending { token: current, .. }) if *current == token) {
+            return;
+        }
+        sessions.remove(device_id);
+        if let Some(error) = error.filter(|_| !self.0.shutting_down.load(Ordering::SeqCst)) {
+            self.record_session_error(device_id, error).await;
+        }
+    }
+
+    async fn finish_launch(&self, device_id: &str, token: u64, result: Result<Startup, String>, guard: OperationGuard) -> Result<Snapshot, String> {
+        let startup = match result {
+            Ok(startup) => startup,
+            Err(error) => {
+                self.finish_pending_launch(device_id, token, Some(&error)).await;
+                return Err(error);
+            }
+        };
+        // Waiting for this child's first frame must not delay launching or
+        // selecting other devices. The startup channel identifies this launch.
+        drop(guard);
+        self.wait_for_startup(device_id, token, startup).await?;
+        Ok(self.snapshot().await)
+    }
+
+    async fn record_session_error(&self, device_id: &str, error: &str) {
+        let mut state = self.0.state.write().await;
+        state.last_error = Some(error.into());
+        state.last_error_device_id = Some(device_id.into());
+        push_log(&mut state, LogLevel::Error, error.into());
+    }
+
+    async fn launch_session(&self, device: &Device, transport: &Transport, token: u64, usb_notice: Option<&UsbNotification>) -> Result<Startup, String> {
+        self.ensure_pending_launch(&device.id, token).await?;
         if transport.kind == TransportKind::Wifi { self.require_wifi_enabled()?; }
         // A cached IP is only a list/display hint. DHCP may have assigned it to a
         // different authorized phone since the last refresh, so every wireless
@@ -908,46 +986,52 @@ impl Engine {
         // Stop may have arrived while metadata/identity checks were awaiting ADB.
         // Hold the session gate from this final check through registration, so a
         // simultaneous stop either cancels startup or immediately sees its child.
-        let mut active = self.0.active.lock().await;
+        let mut sessions = self.0.sessions.lock().await;
         if transport.kind == TransportKind::Wifi { self.require_wifi_enabled()?; }
-        if self.0.stop_epoch.load(Ordering::SeqCst) != expected_epoch
-            || self.0.shutting_down.load(Ordering::SeqCst) {
+        if self.0.shutting_down.load(Ordering::SeqCst) {
             return Err("本次启动已取消。".into());
         }
-        if active.is_some() { return Err("已有设备正在投屏，请先停止当前投屏。".into()); }
+        let Some(SessionSlot::Pending { token: reserved, recovery }) = sessions.get(&device.id) else {
+            return Err("本次启动已取消。".into());
+        };
+        if *reserved != token { return Err("本次启动已取消。".into()); }
+        if usb_notice.is_some() && sessions.values().any(|slot| slot.session().is_some()) {
+            return Err("已有设备正在投屏，本次通知不会切换当前投屏。".into());
+        }
+        let phase = if recovery.is_some() { SessionPhase::Reconnecting } else { SessionPhase::Starting };
+        let started_at = recovery.as_ref().map(|session| session.started_at).unwrap_or_else(now);
         self.clear_usb_notifications();
         let mut child = command.stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped())
             .spawn().map_err(|error| format!("无法启动投屏组件：{error}"))?;
         let stdout = child.stdout.take();
         let stderr = child.stderr.take();
-        let token = self.0.next_token.fetch_add(1, Ordering::SeqCst);
         let connection_lost = Arc::new(AtomicBool::new(false));
+        let (startup, receiver) = oneshot::channel();
         let session = Session {
             device_id: device.id.clone(), device_name: device.name.clone(),
             serial: transport.serial.clone(), transport: transport.kind,
-            phase: if recovered { SessionPhase::Reconnecting } else { SessionPhase::Starting },
-            started_at: now(),
+            phase, started_at,
         };
-        *active = Some(ActiveSession {
-            token, child: Arc::new(Mutex::new(child)), session: session.clone(),
-            user_stop: Arc::new(AtomicBool::new(false)), connection_lost: connection_lost.clone(),
-            recovery_attempted: recovered,
-            stop_epoch: expected_epoch,
-            recovery_serial,
-        });
+        sessions.insert(device.id.clone(), SessionSlot::Live(ActiveSession {
+            token, child: Arc::new(Mutex::new(child)), session,
+            connection_lost: connection_lost.clone(), recovery_serial,
+            startup: Some(startup), startup_error: None, capture_error: None,
+        }));
         {
             let mut state = self.0.state.write().await;
-            state.session = Some(session);
-            state.last_error = None;
+            if state.last_error_device_id.as_deref().is_none_or(|id| id == device.id) {
+                state.last_error = None;
+                state.last_error_device_id = None;
+            }
             push_log(&mut state, LogLevel::Info, format!("正在通过 {} 启动 {}…", if transport.kind == TransportKind::Usb { "USB" } else { "Wi-Fi" }, device.name));
         }
-        drop(active);
-        if let Some(stdout) = stdout { self.read_scrcpy_output(stdout, token, connection_lost.clone()); }
-        if let Some(stderr) = stderr { self.read_scrcpy_output(stderr, token, connection_lost); }
-        Ok(())
+        drop(sessions);
+        if let Some(stdout) = stdout { self.read_scrcpy_output(stdout, device.id.clone(), token, connection_lost.clone()); }
+        if let Some(stderr) = stderr { self.read_scrcpy_output(stderr, device.id.clone(), token, connection_lost); }
+        Ok(receiver)
     }
 
-    fn read_scrcpy_output<R: AsyncRead + Unpin + Send + 'static>(&self, reader: R, token: u64, lost: Arc<AtomicBool>) {
+    fn read_scrcpy_output<R: AsyncRead + Unpin + Send + 'static>(&self, reader: R, device_id: String, token: u64, lost: Arc<AtomicBool>) {
         let engine = self.clone();
         tokio::spawn(async move {
             let mut lines = BufReader::new(reader).lines();
@@ -956,177 +1040,221 @@ impl Engine {
                 if line.is_empty() { continue; }
                 let lower = line.to_ascii_lowercase();
                 if is_connection_loss(&lower) { lost.store(true, Ordering::SeqCst); }
-                let mut active = engine.0.active.lock().await;
-                let Some(current) = active.as_mut().filter(|current| current.token == token) else { continue; };
-                let is_ready = is_video_ready(line);
-                let became_ready = is_ready && current.session.phase != SessionPhase::Running;
-                if became_ready { current.session.phase = SessionPhase::Running; }
-                drop(active);
+                let mut sessions = engine.0.sessions.lock().await;
+                let Some(SessionSlot::Live(current)) = sessions.get_mut(&device_id) else { continue; };
+                if current.token != token { continue; }
                 let mut state = engine.0.state.write().await;
-                if became_ready {
-                    if let Some(session) = state.session.as_mut() { session.phase = SessionPhase::Running; }
-                    push_log(&mut state, LogLevel::Success, "投屏已启动，可以使用电脑键鼠操作设备。".into());
+                if is_video_ready(line) {
+                    current.capture_error = None;
+                    if current.session.phase != SessionPhase::Running {
+                        current.session.phase = SessionPhase::Running;
+                        push_log(&mut state, LogLevel::Success, format!("{} 投屏已启动，可以使用电脑键鼠操作设备。", current.session.device_name));
+                        if let Some(startup) = current.startup.take() { let _ = startup.send(Ok(())); }
+                    }
                 }
-                if lower.contains("error:") {
-                    let message = translate_error(line);
-                    state.last_error = Some(message.clone());
-                    push_log(&mut state, LogLevel::Error, message);
+                if lower.starts_with("[server] error: capture/encoding error:") {
+                    // scrcpy logs this before deciding whether to retry. Its
+                    // stderr may arrive after a successful frame on stdout.
+                    let diagnostic = truncate(line, 500);
+                    push_log(&mut state, LogLevel::Warning, format!("{} · 编码异常：{diagnostic}", current.session.device_name));
+                    current.capture_error = Some(diagnostic);
+                } else if lower.contains("error:") {
+                    let error = translate_error(line);
+                    current.startup_error = Some(error.clone());
+                    state.last_error = Some(error.clone());
+                    state.last_error_device_id = Some(device_id.clone());
+                    push_log(&mut state, LogLevel::Error, format!("{}：{error}", current.session.device_name));
                 } else if lower.contains("warn:") || lower.contains("warning:") {
-                    push_log(&mut state, LogLevel::Warning, format!("组件提示：{}", truncate(line, 500)));
+                    push_log(&mut state, LogLevel::Warning, format!("{} · 组件提示：{}", current.session.device_name, truncate(line, 500)));
                 } else {
-                    push_log(&mut state, LogLevel::Info, format!("scrcpy · {}", truncate(line, 500)));
+                    push_log(&mut state, LogLevel::Info, format!("{} · scrcpy · {}", current.session.device_name, truncate(line, 500)));
                 }
             }
         });
     }
 
-    async fn wait_for_startup(&self) -> Result<(), String> {
-        let deadline = Instant::now() + Duration::from_secs(10);
-        loop {
-            let state = self.0.state.read().await;
-            if state.session.as_ref().is_some_and(|session| session.phase == SessionPhase::Running) { return Ok(()); }
-            if state.session.is_none() {
-                return Err(state.last_error.clone().unwrap_or_else(|| "投屏已结束。请检查设备状态与诊断信息。".into()));
+    async fn wait_for_startup(&self, device_id: &str, token: u64, startup: Startup) -> Result<(), String> {
+        match timeout(Duration::from_secs(10), startup).await {
+            Ok(Ok(result)) => result,
+            Ok(Err(_)) => Err("投屏已结束。请检查设备状态与诊断信息。".into()),
+            Err(_) => {
+                let sessions = self.0.sessions.lock().await;
+                if let Some(SessionSlot::Live(current)) = sessions.get(device_id) {
+                    if current.token == token && current.session.phase != SessionPhase::Running {
+                        self.log(LogLevel::Warning, format!("{} 仍在等待投屏画面，请检查设备授权与诊断信息。", current.session.device_name)).await;
+                    }
+                }
+                Ok(()) // Remains 'starting'; never falsely reports a running session.
             }
-            drop(state);
-            if Instant::now() >= deadline {
-                self.log(LogLevel::Warning, "投屏组件仍在等待画面，请检查手机授权与诊断信息。".into()).await;
-                return Ok(()); // Remains 'starting'; never falsely reports a running session.
-            }
-            if let Some(active) = self.0.active.lock().await.as_ref() {
-                if active.user_stop.load(Ordering::SeqCst) { return Ok(()); }
-            }
-            sleep(Duration::from_millis(100)).await;
         }
     }
 
-    async fn stop_inner(&self) -> Result<(), String> {
-        let active = self.0.active.lock().await.take();
-        self.0.state.write().await.session = None;
-        if let Some(active) = active {
-            active.user_stop.store(true, Ordering::SeqCst);
-            let mut child = active.child.lock().await;
-            if child.try_wait().map_err(|error| format!("无法读取投屏进程状态：{error}"))?.is_none() {
-                child.kill().await.map_err(|error| format!("停止投屏失败：{error}"))?;
-            }
-            child.wait().await.map_err(|error| format!("等待投屏结束失败：{error}"))?;
-            self.log(LogLevel::Info, "投屏已停止。".into()).await;
-        }
-        Ok(())
-    }
-
-    /// This never sends adb disconnect or changes the phone's Wi-Fi. USB and
-    /// processes owned by other programs remain untouched.
-    async fn stop_wifi_inner(&self) -> Result<(), String> {
-        let active = {
-            let mut active = self.0.active.lock().await;
-            if active.as_ref().is_none_or(|current| current.session.transport != TransportKind::Wifi) { return Ok(()); }
-            let current = active.take().unwrap();
-            self.0.state.write().await.session = None;
-            current
-        };
-        active.user_stop.store(true, Ordering::SeqCst);
-        let mut child = active.child.lock().await;
-        if child.try_wait().map_err(|error| format!("无法读取无线投屏进程状态：{error}"))?.is_none() {
-            child.kill().await.map_err(|error| format!("停止无线投屏失败：{error}"))?;
-        }
-        child.wait().await.map_err(|error| format!("等待无线投屏结束失败：{error}"))?;
-        self.log(LogLevel::Info, "无线投屏已停止。".into()).await;
-        Ok(())
-    }
-
-    async fn poll_session(&self) {
-        let pending = {
-            let active = self.0.active.lock().await;
-            active.as_ref().map(|current| (current.token, current.child.clone()))
-        };
-        let Some((token, child)) = pending else { return; };
-        let status = match child.lock().await.try_wait() {
-            Ok(Some(status)) => status,
-            Ok(None) => return,
-            Err(error) => {
-                self.log(LogLevel::Error, format!("读取投屏进程状态失败：{error}")).await;
-                return;
-            }
-        };
-        // A process exit can be observed just before its buffered stderr is read.
-        // Drain that last scheduling turn while the session is still identifiable.
-        sleep(Duration::from_millis(100)).await;
-        let ended = {
-            let mut active = self.0.active.lock().await;
-            if active.as_ref().is_none_or(|current| current.token != token) { return; }
-            active.take().unwrap()
-        };
-        self.0.state.write().await.session = None;
-        let user_stop = ended.user_stop.load(Ordering::SeqCst);
-        let lost = ended.connection_lost.load(Ordering::SeqCst);
-        if user_stop || self.0.shutting_down.load(Ordering::SeqCst) { return; }
-        // User window closes have no loss flag and therefore never reconnect.
-        if !status.success() || lost {
-            self.log(LogLevel::Warning, "投屏连接已结束，正在检查设备状态。".into()).await;
-        } else {
-            self.log(LogLevel::Info, "投屏窗口已关闭。".into()).await;
-        }
-        if !recovery_allowed(user_stop, ended.session.transport, lost && !status.success(), ended.recovery_attempted, false) {
-            if !status.success() {
-                let mut state = self.0.state.write().await;
-                if state.last_error.is_none() {
-                    state.last_error = Some("投屏组件已退出，请查看诊断信息并重试。".into());
+    /// Cancel reservations under the same gate used to spawn. Hold that gate
+    /// until each matching child exits, so the device cannot start twice.
+    async fn stop_sessions(&self, matches: impl Fn(&str, &SessionSlot) -> bool) -> Result<(), String> {
+        let mut sessions = self.0.sessions.lock().await;
+        let targets = sessions.iter().filter_map(|(id, slot)| matches(id, slot).then_some(id.clone())).collect::<Vec<_>>();
+        let mut result = Ok(());
+        for id in targets {
+            if let Some(SessionSlot::Live(current)) = sessions.get(&id) {
+                let mut child = current.child.lock().await;
+                let stopped = async {
+                    if child.try_wait().map_err(|error| format!("无法读取投屏进程状态：{error}"))?.is_none() {
+                        child.kill().await.map_err(|error| format!("停止投屏失败：{error}"))?;
+                    }
+                    child.wait().await.map_err(|error| format!("等待投屏结束失败：{error}"))?;
+                    Ok::<(), String>(())
+                }.await;
+                if let Err(error) = stopped {
+                    // Keep a failed child registered so it can be retried.
+                    self.record_session_error(&id, &error).await;
+                    result = Err(error);
+                    continue;
                 }
             }
-            return;
+            if let Some(mut slot) = sessions.remove(&id) {
+                if let SessionSlot::Live(current) = &mut slot {
+                    if let Some(startup) = current.startup.take() { let _ = startup.send(Ok(())); }
+                }
+                if let Some(session) = slot.session() {
+                    self.log(LogLevel::Info, format!("{} 投屏已停止。", session.device_name)).await;
+                }
+            }
         }
-        if !self.0.wifi_enabled.load(Ordering::SeqCst) { return; }
-        let wifi_epoch = self.0.wifi_epoch.load(Ordering::SeqCst);
-        let saved_address = self.0.state.read().await.saved_devices.iter()
-            .find(|saved| saved.id == ended.session.device_id).map(|saved| saved.address.clone());
-        let Some(address) = ended.recovery_serial.clone().or(saved_address) else {
-            self.log(LogLevel::Warning, "USB 已断开。该设备尚未配置无线连接，请重新插线或配置无线。".into()).await;
-            return;
+        result
+    }
+
+    /// This never sends adb disconnect or changes the phone's Wi-Fi.
+    async fn stop_wifi_inner(&self) -> Result<(), String> {
+        self.stop_sessions(|_, slot| slot.session().is_some_and(|session| session.transport == TransportKind::Wifi)).await
+    }
+
+    async fn poll_sessions(&self) {
+        let children = {
+            let sessions = self.0.sessions.lock().await;
+            sessions.values().filter_map(|slot| match slot {
+                SessionSlot::Live(current) => Some((current.session.device_id.clone(), current.token, current.child.clone())),
+                SessionSlot::Pending { .. } => None,
+            }).collect::<Vec<_>>()
         };
-        // Finish any user operation first. Stop/shutdown invalidate this recovery
-        // by incrementing stop_epoch, even after the old child has been removed.
+        let mut exited = Vec::new();
+        for (id, token, child) in children {
+            match child.lock().await.try_wait() {
+                Ok(Some(status)) => exited.push((id, token, status.success())),
+                Ok(None) => {}
+                Err(error) => self.log(LogLevel::Error, format!("读取投屏进程状态失败：{error}")).await,
+            }
+        }
+        if exited.is_empty() { return; }
+
+        // A process exit can be observed just before its buffered stderr is read.
+        sleep(Duration::from_millis(100)).await;
+        for (id, token, success) in exited {
+            self.on_child_exit(&id, token, success).await;
+        }
+    }
+
+    async fn on_child_exit(&self, device_id: &str, token: u64, success: bool) {
+        let (mut ended, recovery, exit_error) = {
+            let mut sessions = self.0.sessions.lock().await;
+            let Some(SessionSlot::Live(current)) = sessions.get(device_id) else { return; };
+            if current.token != token || self.0.shutting_down.load(Ordering::SeqCst) { return; }
+
+            let lost = current.connection_lost.load(Ordering::SeqCst);
+            let mut state = self.0.state.write().await;
+            if !success || lost {
+                push_log(&mut state, LogLevel::Warning, format!("{} 投屏连接已结束，正在检查设备状态。", current.session.device_name));
+            } else {
+                push_log(&mut state, LogLevel::Info, format!("{} 投屏窗口已关闭。", current.session.device_name));
+            }
+            let can_recover = self.0.wifi_enabled.load(Ordering::SeqCst)
+                && recovery_allowed(false, current.session.transport, lost && !success, false, false);
+            let mut exit_error = current.startup_error.clone();
+            if !success && exit_error.is_none() {
+                // A failed process that never produced a frame can still give
+                // a useful encoder diagnostic. After frames, an earlier retry
+                // does not establish the reason for this later exit.
+                let startup_capture_error = current.capture_error.as_deref()
+                    .filter(|_| current.session.phase != SessionPhase::Running);
+                exit_error = startup_capture_error.map(translate_error).or_else(|| {
+                    (!can_recover || current.capture_error.is_some())
+                        .then(|| format!("{} 的投屏组件已退出，请查看诊断信息并重试。", current.session.device_name))
+                });
+                if let Some(error) = &exit_error {
+                    state.last_error = Some(error.clone());
+                    state.last_error_device_id = Some(device_id.into());
+                    push_log(&mut state, LogLevel::Error, error.clone());
+                }
+            }
+            let recovery = if can_recover {
+                let address = current.recovery_serial.clone().or_else(|| state.saved_devices.iter()
+                    .find(|saved| saved.id == device_id).map(|saved| saved.address.clone()));
+                match address {
+                    Some(address) => {
+                        let token = self.0.next_token.fetch_add(1, Ordering::SeqCst);
+                        let session = Session {
+                            serial: address.clone(), transport: TransportKind::Wifi, phase: SessionPhase::Reconnecting,
+                            ..current.session.clone()
+                        };
+                        Some((token, self.0.wifi_epoch.load(Ordering::SeqCst), session))
+                    }
+                    None => {
+                        push_log(&mut state, LogLevel::Warning, format!("{} 的 USB 已断开。该设备尚未配置无线连接，请重新插线或配置无线。", current.session.device_name));
+                        None
+                    }
+                }
+            } else { None };
+            let Some(SessionSlot::Live(ended)) = sessions.remove(device_id) else { return; };
+            if let Some((token, _, session)) = &recovery {
+                sessions.insert(device_id.into(), SessionSlot::Pending { token: *token, recovery: Some(session.clone()) });
+            }
+            (ended, recovery, exit_error)
+        };
+        if let Some(startup) = ended.startup.take() {
+            let error = exit_error.unwrap_or_else(|| "投屏已结束。请检查设备状态与诊断信息。".into());
+            let _ = startup.send(Err(error));
+        }
+        if let Some((token, wifi_epoch, session)) = recovery {
+            let engine = self.clone();
+            tokio::spawn(async move { engine.recover_session(ended.session, token, wifi_epoch, session.serial).await; });
+        }
+    }
+
+    async fn recovery_is_current(&self, device_id: &str, token: u64, wifi_epoch: u64) -> bool {
+        let sessions = self.0.sessions.lock().await;
+        !self.0.shutting_down.load(Ordering::SeqCst)
+            && self.0.wifi_enabled.load(Ordering::SeqCst)
+            && self.0.wifi_epoch.load(Ordering::SeqCst) == wifi_epoch
+            && matches!(sessions.get(device_id), Some(SessionSlot::Pending { token: current, recovery: Some(_) }) if *current == token)
+    }
+
+    async fn recover_session(&self, ended: Session, token: u64, wifi_epoch: u64, address: String) {
         let lock = self.0.operation.clone().lock_owned().await;
-        if ended.user_stop.load(Ordering::SeqCst)
-            || self.0.shutting_down.load(Ordering::SeqCst)
-            || self.0.stop_epoch.load(Ordering::SeqCst) != ended.stop_epoch
-            || !self.0.wifi_enabled.load(Ordering::SeqCst)
-            || self.0.wifi_epoch.load(Ordering::SeqCst) != wifi_epoch { return; }
-        if self.0.active.lock().await.is_some() { return; }
+        if !self.recovery_is_current(&ended.device_id, token, wifi_epoch).await { return; }
         self.0.busy.store(true, Ordering::SeqCst);
         let _guard = OperationGuard { _guard: lock, busy: self.0.busy.clone() };
         let recovery = async {
             let adb_state = self.adb(&["devices", "-l"], ADB_TIMEOUT).await?;
             let connections = parse_adb_devices(&adb_state);
-            let usb_present = connections.iter().any(|device| device.serial == ended.session.serial);
-            if usb_present { return Ok(false); }
-            self.log(LogLevel::Info, "USB 已断开，正在尝试恢复为同一设备的无线投屏…".into()).await;
+            if connections.iter().any(|device| device.serial == ended.serial)
+                || !self.recovery_is_current(&ended.device_id, token, wifi_epoch).await { return Ok(false); }
+            self.log(LogLevel::Info, format!("{} 的 USB 已断开，正在尝试恢复为同一设备的无线投屏…", ended.device_name)).await;
             if !connections.iter().any(|device| device.serial == address && device.state == "device") {
                 self.connect_verified(&address).await?;
             }
-            let metadata = self.metadata(&address, &ended.session.device_name, TransportKind::Wifi, true).await?;
-            verify_device_identity(&ended.session.device_id, &metadata)?;
+            let metadata = self.metadata(&address, &ended.device_name, TransportKind::Wifi, true).await?;
+            verify_device_identity(&ended.device_id, &metadata)?;
             self.refresh_inner().await?;
-            let device = self.find_device(&ended.session.device_id).await?;
+            let device = self.find_device(&ended.device_id).await?;
             let transport = device.transports.iter().find(|transport| transport.kind == TransportKind::Wifi && transport.serial == address && transport.state == "device")
                 .ok_or_else(|| "无线设备仍未就绪，请检查网络后手动重试。".to_string())?.clone();
-            if self.0.stop_epoch.load(Ordering::SeqCst) != ended.stop_epoch
-                || self.0.shutting_down.load(Ordering::SeqCst)
-                || !self.0.wifi_enabled.load(Ordering::SeqCst)
-                || self.0.wifi_epoch.load(Ordering::SeqCst) != wifi_epoch { return Ok(false); }
-            self.launch_session(&device, &transport, true, ended.stop_epoch).await?;
+            if !self.recovery_is_current(&ended.device_id, token, wifi_epoch).await { return Ok(false); }
+            let _startup = self.launch_session(&device, &transport, token, None).await?;
             Ok::<bool, String>(true)
         }.await;
-        if let Err(error) = recovery {
-            if !self.0.wifi_enabled.load(Ordering::SeqCst)
-                || self.0.wifi_epoch.load(Ordering::SeqCst) != wifi_epoch
-                || self.0.stop_epoch.load(Ordering::SeqCst) != ended.stop_epoch
-                || self.0.shutting_down.load(Ordering::SeqCst) { return; }
-            let message = format!("无线恢复失败：{error} 请检查网络后点击「开始投屏」重试。");
-            let mut state = self.0.state.write().await;
-            state.last_error = Some(message.clone());
-            push_log(&mut state, LogLevel::Error, message);
-        }
+        let error = recovery.err().map(|error|
+            format!("{} 无线恢复失败：{error} 请检查网络后点击「开始投屏」重试。", ended.device_name));
+        self.finish_pending_launch(&ended.device_id, token, error.as_deref()).await;
     }
 }
 

@@ -19,7 +19,8 @@ function run(file, args) {
 if (process.platform !== 'win32') throw new Error('集成测试模拟 Windows 投屏组件，请在 Windows 上运行。');
 const manifest = 'tests/engine-harness/Cargo.toml';
 run(cargo, ['test', '--manifest-path', manifest, '--lib', '--locked']);
-run(cargo, ['build', '--manifest-path', manifest, '--bin', 'mock-runtime', '--bin', 'mock-lifecycle', '--bin', 'mock-usb-notifications', '--bin', 'mock-wifi-toggle', '--locked']);
+run(cargo, ['build', '--manifest-path', manifest, '--bin', 'mock-runtime', '--bin', 'mock-lifecycle', '--bin', 'mock-usb-notifications', '--bin', 'mock-wifi-toggle', '--bin', 'mock-multi-device', '--locked']);
 run(path.join(root, 'tests/engine-harness/target/debug/mock-lifecycle.exe'), []);
 run(path.join(root, 'tests/engine-harness/target/debug/mock-usb-notifications.exe'), []);
 run(path.join(root, 'tests/engine-harness/target/debug/mock-wifi-toggle.exe'), []);
+run(path.join(root, 'tests/engine-harness/target/debug/mock-multi-device.exe'), []);

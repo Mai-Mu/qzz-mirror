@@ -12,10 +12,11 @@ npm run test:engine
 
 ```powershell
 cargo test --manifest-path tests/engine-harness/Cargo.toml --lib --locked
-cargo build --manifest-path tests/engine-harness/Cargo.toml --bin mock-runtime --bin mock-lifecycle --bin mock-usb-notifications --bin mock-wifi-toggle --locked
+cargo build --manifest-path tests/engine-harness/Cargo.toml --bin mock-runtime --bin mock-lifecycle --bin mock-usb-notifications --bin mock-wifi-toggle --bin mock-multi-device --locked
 & ./tests/engine-harness/target/debug/mock-lifecycle.exe
 & ./tests/engine-harness/target/debug/mock-usb-notifications.exe
 & ./tests/engine-harness/target/debug/mock-wifi-toggle.exe
+& ./tests/engine-harness/target/debug/mock-multi-device.exe
 ```
 
 0.2.0 设置相关检查包含：
@@ -31,6 +32,8 @@ cargo build --manifest-path tests/engine-harness/Cargo.toml --bin mock-runtime -
 0.4.0 USB 通知策略直接导入生产 `usb_notifications.rs`，覆盖启动基线、前台抑制且不补发、授权/离线/身份变化、同一设备合并、五分钟过期和令牌失败等状态转换。`mock-usb-notifications` 另外运行 17 组集成检查：使用真实 Engine 和模拟可执行文件，检查插拔换代、刷新期间切换前后台、ADB/新鲜身份核验失败、发出通知后换代直至 spawn 前的再次验证、单次动作/并发双击、已有与首帧前会话保护、明确 USB 而保留 Wi-Fi 偏好、撤销/关闭/退出清理，以及通知故障只写警告和不增加重复 metadata 查询。模拟测试不会发送系统通知，也不能替代 Windows 通知中心与按钮的人工验收。
 
 `mock-wifi-toggle` 验证 Wi-Fi 总开关的九组状态与并发行为：旧设置默认开启；关闭后只暴露 USB、不查询无线 metadata，地址仍保留磁盘并可重新开启；所有无线入口从后端拒绝；Auto 仅使用 USB，现有 USB 子进程不受切换影响，USB 断线不恢复无线；普通保存设置也能停止自有 Wi-Fi 会话；身份核验、首帧等待和 USB 断线恢复期间关闭时不遗漏子进程；开关等待 USB 发现时保留 USB 启动随后提交的设备偏好。检查还断言不会发出共享 `adb disconnect` 或 `kill-server`。
+
+`mock-multi-device` 同时启动两台模拟设备，验证同一物理设备的 USB 和 Wi-Fi 去重、各窗口按键和关闭的隔离、单台设备从 USB 恢复到 Wi-Fi、同时存在多个 Wi-Fi 会话时关闭总开关，以及单独停止、托盘停止全部和退出清理。另覆盖首帧前后的 scrcpy 编码重试日志、实际启动失败，以及一台设备出画时保留另一台的失败提示。
 
 另运行 `node scripts/test-sdl-navigation.mjs`，可加载已准备的实际 SDL3.dll，在测试进程自己的隐藏 SDL 窗口中调用生产 dispatcher，检查左 Alt+s/b/h 的 SYSKEY 事件顺序、修饰状态、重复标志、文字消息与焦点/捕获/键盘状态。该检查不移动鼠标、不请求前台、不使用全局输入、不控制真实手机；耗时仅表示本地窗口投递及 SDL 事件消费，不代表 Android 端到端响应时间。结果写入 `.work/sdl-navigation-smoke.json`。
 

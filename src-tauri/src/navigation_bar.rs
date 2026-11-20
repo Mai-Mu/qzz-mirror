@@ -1,4 +1,4 @@
-//! A small, non-activating companion for the scrcpy window we own. No hooks or
+//! Non-activating companion bars for the scrcpy windows we own. No hooks or
 //! window procedures are injected into scrcpy, and its input handling is intact.
 use std::sync::Arc;
 
@@ -24,7 +24,7 @@ mod platform {
     use super::*;
     use std::result::Result::Ok;
     use std::{
-        cell::{Cell, RefCell}, ffi::c_void, mem::{size_of, zeroed},
+        cell::{Cell, RefCell}, collections::HashMap, ffi::c_void, mem::{size_of, zeroed},
         ptr::{null, null_mut}, sync::{atomic::{AtomicBool, Ordering}, mpsc, Mutex},
         thread::{self, JoinHandle}, time::{Duration, Instant},
     };
@@ -49,8 +49,7 @@ mod platform {
     struct Feedback { generation: u64, busy: bool, error_at: Option<Instant> }
 
     struct Shared {
-        target: Mutex<Option<Target>>,
-        feedback: Mutex<Feedback>,
+        targets: Mutex<Arc<[Target]>>,
         stopped: AtomicBool,
     }
 
@@ -58,8 +57,10 @@ mod platform {
     pub struct NavigationController { shared: Arc<Shared> }
 
     impl NavigationController {
-        pub fn set_target(&self, target: Option<Target>) {
-            if let Ok(mut current) = self.shared.target.lock() { *current = target; }
+        pub fn set_targets(&self, targets: Vec<Target>) {
+            if let Ok(mut current) = self.shared.targets.lock() {
+                if current.as_ref() != targets.as_slice() { *current = targets.into(); }
+            }
         }
         pub fn is_stopped(&self) -> bool { self.shared.stopped.load(Ordering::Acquire) }
     }
@@ -73,7 +74,7 @@ mod platform {
     impl NavigationBar {
         pub fn start(callback: impl Fn(u64, NavigationButton, Completion) + Send + Sync + 'static) -> Result<Self, String> {
             let shared = Arc::new(Shared {
-                target: Mutex::new(None), feedback: Mutex::new(Feedback::default()),
+                targets: Mutex::new(Arc::from([])),
                 stopped: AtomicBool::new(false),
             });
             let controller = NavigationController { shared: shared.clone() };
@@ -143,6 +144,41 @@ mod platform {
 
     struct WindowState { ui: RefCell<Ui>, paint: Cell<PaintSnapshot> }
 
+    impl WindowState {
+        fn new(action: Action) -> Self {
+            Self {
+                ui: RefCell::new(Ui::new(action)),
+                paint: Cell::new(PaintSnapshot { dpi: 96, hover: None, error: false }),
+            }
+        }
+    }
+
+    struct ControllerState {
+        shared: Arc<Shared>,
+        action: Action,
+        // The Win32 windows retain pointers to their own state. Keeping the
+        // states boxed preserves those addresses when the map grows.
+        bars: RefCell<HashMap<u64, Box<WindowState>>>,
+    }
+
+    impl ControllerState {
+        unsafe fn sync(&self) {
+            let Ok(targets) = self.shared.targets.lock().map(|targets| targets.clone()) else { return; };
+            let Ok(mut bars) = self.bars.try_borrow_mut() else { return; };
+            bars.retain(|token, state| {
+                if targets.iter().any(|target| target.token == *token) { return true; }
+                let Ok(mut ui) = state.ui.try_borrow_mut() else { return true; };
+                ui.detach();
+                false
+            });
+            for target in targets.iter().copied() {
+                let state = bars.entry(target.token)
+                    .or_insert_with(|| Box::new(WindowState::new(self.action.clone())));
+                if let Ok(mut ui) = state.ui.try_borrow_mut() { ui.sync(target, state); }
+            }
+        }
+    }
+
     struct PaintBuffer { target: HDC, dc: HDC, bitmap: HBITMAP, previous: HGDIOBJ, width: i32, height: i32 }
 
     impl PaintBuffer {
@@ -168,8 +204,7 @@ mod platform {
     }
 
     struct Ui {
-        shared: Arc<Shared>, action: Action,
-        state_ptr: *const c_void,
+        feedback: Arc<Mutex<Feedback>>, action: Action,
         owner: HWND, bar: HWND, buttons: [HWND; 3], tooltip: HWND,
         target: Option<Target>, hook: HWINEVENTHOOK,
         previous_bounds: Option<Bounds>, dpi: u32,
@@ -178,9 +213,10 @@ mod platform {
     }
 
     impl Ui {
-        fn new(shared: Arc<Shared>, action: Action) -> Self {
+        fn new(action: Action) -> Self {
             Self {
-                shared, action, state_ptr: null(), owner: null_mut(), bar: null_mut(),
+                feedback: Arc::new(Mutex::new(Feedback::default())),
+                action, owner: null_mut(), bar: null_mut(),
                 buttons: [null_mut(); 3], tooltip: null_mut(), target: None, hook: null_mut(),
                 previous_bounds: None, dpi: 96, hover: None, pressed: None,
                 reveal_until: None, last_visual: (false, false),
@@ -193,22 +229,20 @@ mod platform {
             self.owner = null_mut(); self.bar = null_mut(); self.buttons = [null_mut(); 3];
             self.tooltip = null_mut(); self.target = None; self.previous_bounds = None;
             self.hover = None; self.pressed = None; self.reveal_until = None;
-            if let Ok(mut feedback) = self.shared.feedback.lock() {
+            if let Ok(mut feedback) = self.feedback.lock() {
                 feedback.generation = feedback.generation.wrapping_add(1);
                 feedback.busy = false; feedback.error_at = None;
             }
         }
 
-        unsafe fn sync(&mut self) {
-            let target = self.shared.target.lock().ok().and_then(|value| *value);
-            let Some(target) = target else { self.detach(); return; };
+        unsafe fn sync(&mut self, target: Target, state: &WindowState) {
             let same_session = self.target.is_some_and(|current| current.token == target.token && current.process_id == target.process_id);
             if !same_session || !belongs_to(self.owner, target.process_id) || IsWindow(self.bar) == 0 {
                 self.detach();
                 self.owner = find_owner(target.process_id);
                 if self.owner.is_null() { return; }
                 self.target = Some(target);
-                if !self.create_bar() { self.detach(); return; }
+                if !self.create_bar(state) { self.detach(); return; }
                 self.hook = SetWinEventHook(EVENT_OBJECT_DESTROY, EVENT_OBJECT_LOCATIONCHANGE,
                     null_mut(), Some(owner_event), target.process_id, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
             }
@@ -250,14 +284,13 @@ mod platform {
             let hover = if on_bar { self.buttons.iter().position(|&button| {
                 let mut r = zeroed(); GetWindowRect(button, &mut r) != 0 && Bounds::from(r).contains(cursor)
             }) } else { None };
-            let feedback = self.shared.feedback.lock().ok();
+            let feedback = self.feedback.lock().ok();
             let visual = (target.running && feedback.as_ref().is_none_or(|f| !f.busy),
                 feedback.as_ref().and_then(|f| f.error_at).is_some_and(|at| at.elapsed() < Duration::from_millis(800)));
             drop(feedback);
             let previous_hover = self.hover;
             let error_changed = self.last_visual.1 != visual.1;
             self.dpi = dpi; self.last_visual = visual; self.hover = hover;
-            let state = &*(self.state_ptr as *const WindowState);
             state.paint.set(PaintSnapshot { dpi, hover, error: visual.1 });
 
             if position_changed || size_changed {
@@ -285,12 +318,12 @@ mod platform {
             if show { self.sync_z_order(); }
         }
 
-        unsafe fn create_bar(&mut self) -> bool {
+        unsafe fn create_bar(&mut self, state: &WindowState) -> bool {
             let instance = GetModuleHandleW(null());
             let topmost = (GetWindowLongPtrW(self.owner, GWL_EXSTYLE) as u32) & WS_EX_TOPMOST;
             self.bar = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | topmost,
                 BAR_CLASS, w!("安卓导航"), WS_POPUP | WS_CLIPCHILDREN,
-                0, 0, 1, 1, self.owner, null_mut(), instance, self.state_ptr);
+                0, 0, 1, 1, self.owner, null_mut(), instance, std::ptr::from_ref(state).cast());
             if self.bar.is_null() { return false; }
             let corners: u32 = DWMWCP_DONOTROUND as _;
             DwmSetWindowAttribute(self.bar, DWMWA_WINDOW_CORNER_PREFERENCE as _, &corners as *const _ as _, size_of::<u32>() as _);
@@ -350,15 +383,15 @@ mod platform {
             if pressed != Some((index, target.token)) { return; }
             let button = match index { 0 => NavigationButton::Recents, 1 => NavigationButton::Back, 2 => NavigationButton::Home, _ => return };
             let generation = {
-                let Ok(mut feedback) = self.shared.feedback.lock() else { return; };
+                let Ok(mut feedback) = self.feedback.lock() else { return; };
                 if feedback.busy { return; }
                 feedback.generation = feedback.generation.wrapping_add(1);
                 feedback.busy = true; feedback.error_at = None;
                 feedback.generation
             };
-            let shared = self.shared.clone();
+            let feedback = self.feedback.clone();
             (self.action)(target.token, button, Box::new(move |result| {
-                if let Ok(mut feedback) = shared.feedback.lock() {
+                if let Ok(mut feedback) = feedback.lock() {
                     if feedback.generation == generation {
                         feedback.busy = false;
                         feedback.error_at = result.err().map(|_| Instant::now());
@@ -456,9 +489,11 @@ mod platform {
     }
 
     unsafe extern "system" fn owner_event(_: HWINEVENTHOOK, _: u32, _: HWND, object: i32, _: i32, _: u32, _: u32) {
-        if object == OBJID_WINDOW {
-            CONTROLLER.with(|window| { if !window.get().is_null() { PostMessageW(window.get(), SYNC, 0, 0); } });
-        }
+        if object == OBJID_WINDOW { request_sync(); }
+    }
+
+    unsafe fn request_sync() {
+        CONTROLLER.with(|window| { if !window.get().is_null() { PostMessageW(window.get(), SYNC, 0, 0); } });
     }
 
     unsafe extern "system" fn button_proc(window: HWND, message: u32, w: WPARAM, l: LPARAM, _: usize, index: usize) -> LRESULT {
@@ -506,6 +541,7 @@ mod platform {
         match message {
             WM_MOUSEACTIVATE => return MA_NOACTIVATE as _,
             WM_ERASEBKGND => return 1,
+            WM_DPICHANGED => { request_sync(); return 0; }
             WM_PAINT => {
                 let mut paint = zeroed(); let dc = BeginPaint(window, &mut paint);
                 let mut rect: RECT = zeroed(); GetClientRect(window, &mut rect);
@@ -518,13 +554,6 @@ mod platform {
         if !pointer.is_null() {
             let state = &*pointer;
             match message {
-                WM_TIMER | SYNC | WM_DPICHANGED => {
-                    if let Ok(mut ui) = state.ui.try_borrow_mut() {
-                        if ui.shared.stopped.load(Ordering::Acquire) { PostQuitMessage(0); }
-                        else { ui.sync(); }
-                    }
-                    return 0;
-                }
                 WM_DRAWITEM if l != 0 => {
                     Ui::draw_button(&*(l as *const DRAWITEMSTRUCT), state.paint.get());
                     return 1;
@@ -537,6 +566,25 @@ mod platform {
         DefWindowProcW(window, message, w, l)
     }
 
+    unsafe extern "system" fn controller_proc(window: HWND, message: u32, w: WPARAM, l: LPARAM) -> LRESULT {
+        match message {
+            WM_NCCREATE => {
+                let create = &*(l as *const CREATESTRUCTW);
+                SetWindowLongPtrW(window, GWLP_USERDATA, create.lpCreateParams as _);
+            }
+            WM_TIMER | SYNC => {
+                let pointer = GetWindowLongPtrW(window, GWLP_USERDATA) as *const ControllerState;
+                if let Some(state) = pointer.as_ref() {
+                    if state.shared.stopped.load(Ordering::Acquire) { PostQuitMessage(0); }
+                    else { state.sync(); }
+                }
+                return 0;
+            }
+            _ => {}
+        }
+        DefWindowProcW(window, message, w, l)
+    }
+
     unsafe fn run(shared: Arc<Shared>, action: Action, ready: &mpsc::SyncSender<Result<u32, String>>) -> Result<(), String> {
         SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         let mut gdiplus_token = 0;
@@ -545,24 +593,23 @@ mod platform {
         let controls = INITCOMMONCONTROLSEX { dwSize: size_of::<INITCOMMONCONTROLSEX>() as _, dwICC: ICC_WIN95_CLASSES };
         InitCommonControlsEx(&controls);
         let instance = GetModuleHandleW(null());
-        for class_name in [CONTROLLER_CLASS, BAR_CLASS] {
-            let class = WNDCLASSW { lpfnWndProc: Some(window_proc), hInstance: instance,
+        for (class_name, handler) in [(CONTROLLER_CLASS, controller_proc as _), (BAR_CLASS, window_proc as _)] {
+            let class = WNDCLASSW { lpfnWndProc: Some(handler), hInstance: instance,
                 hCursor: LoadCursorW(null_mut(), IDC_ARROW), lpszClassName: class_name, ..zeroed() };
             if RegisterClassW(&class) == 0 && GetLastError() != ERROR_CLASS_ALREADY_EXISTS {
                 GdiplusShutdown(gdiplus_token); return Err("无法注册导航窗口。".into());
             }
         }
-        let state = Box::new(WindowState {
-            ui: RefCell::new(Ui::new(shared.clone(), action)),
-            paint: Cell::new(PaintSnapshot { dpi: 96, hover: None, error: false }),
+        let state = Box::new(ControllerState {
+            shared: shared.clone(), action, bars: RefCell::new(HashMap::new()),
         });
-        let pointer = &*state as *const WindowState as *const c_void;
-        state.ui.borrow_mut().state_ptr = pointer;
+        let pointer = &*state as *const ControllerState as *const c_void;
         let controller = CreateWindowExW(0, CONTROLLER_CLASS, w!("Qzz Mirror Navigation Controller"), 0,
             0, 0, 0, 0, HWND_MESSAGE, null_mut(), instance, pointer);
         if controller.is_null() { GdiplusShutdown(gdiplus_token); return Err("无法创建导航窗口。".into()); }
         CONTROLLER.with(|slot| slot.set(controller));
         if SetTimer(controller, TICK, 40, None) == 0 {
+            CONTROLLER.with(|slot| slot.set(null_mut()));
             DestroyWindow(controller); GdiplusShutdown(gdiplus_token); return Err("无法启动导航栏跟随。".into());
         }
         let _ = ready.send(Ok(GetCurrentThreadId()));
@@ -571,8 +618,8 @@ mod platform {
             TranslateMessage(&message); DispatchMessageW(&message);
         }
         KillTimer(controller, TICK);
-        state.ui.borrow_mut().detach();
         CONTROLLER.with(|slot| slot.set(null_mut()));
+        for (_, state) in state.bars.borrow_mut().drain() { state.ui.borrow_mut().detach(); }
         DestroyWindow(controller);
         GdiplusShutdown(gdiplus_token);
         Ok(())

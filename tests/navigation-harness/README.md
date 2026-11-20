@@ -13,8 +13,10 @@ in the harness's own toolbar process.
 
 Checks cover attachment, 48 DIP geometry, move/resize, native accessibility
 names, `WM_MOUSEACTIVATE`, unchanged foreground around `BM_CLICK`, callback
-order/token, disabled non-running targets, PID replacement, owner destruction,
-and worker shutdown. Optional `PrintWindow` captures only the verified toolbar.
+order/token, disabled non-running targets, owner destruction, and worker
+shutdown. Two simultaneous helpers verify separate bars, independent pending
+requests, and removal of one owner while the other bar remains usable.
+Optional `PrintWindow` captures only the verified toolbar.
 Results are written to `.work/navigation-smoke.json` and the capture to
 `.work/navigation-bar-smoke.bmp` (PNG when Pillow is available).
 The runner also executes the production module's pure geometry unit tests for
